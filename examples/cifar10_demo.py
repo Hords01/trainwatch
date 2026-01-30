@@ -15,7 +15,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from src.trainwatch import Watcher
+from trainwatch import Watcher
 
 # simple CNN for CIFAR-10
 class SimpleCNN(nn.Module):
