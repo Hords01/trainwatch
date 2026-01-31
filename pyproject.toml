@@ -11,7 +11,7 @@ requires-python = ">=3.8"
 license = {text = "MIT"}
 keywords = ["pytorch", "training", "monitoring", "deep-learning", "machine-learning"]
 authors = [
-    {name = "Emirkan Hords01 Beyaz"}
+    {name = "Emirkan Beyaz", email = "emirkanbeyaz01@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -44,6 +44,7 @@ dev = [
 "Homepage" = "https://github.com/Hords01/trainwatch"
 "Bug Reports" = "https://github.com/Hords01/trainwatch/issues"
 "Source" = "https://github.com/Hords01/trainwatch"
+"Documentation" = "https://github.com/Hords01/trainwatch/blob/main/README.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]

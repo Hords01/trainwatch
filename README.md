@@ -130,6 +130,93 @@ GPU idle while waiting for data.
 
 ---
 
+## Examples
+
+See the [`examples/`](examples/) directory for complete working examples:
+
+### 🎯 Simple CNN - CIFAR-10
+Perfect for getting started. Shows basic TrainWatch integration with a simple 2-layer CNN.
+
+```bash
+python examples/cifar10_simple.py
+```
+
+**Tested on:** Kaggle CPU, GPU T4, GPU P100  
+**Training time:** ~2 min (GPU)  
+**Results:** [examples/cifar10_results.md](examples/cifar10_results.md)
+
+### 🏗️ DenseNet121 - CIFAR-10 🆕
+Real PyTorch model from torchvision.models, training from scratch.
+
+```bash
+python examples/densenet_cifar10.py
+```
+
+**Model:** DenseNet121 (weights=None, ~7M params)  
+**Image size:** 224×224 (CIFAR resized)  
+**VRAM:** ~850MB  
+**Shows:** Production architecture, gradient clipping
+
+### 🚀 Advanced ResNet - Fashion-MNIST  
+Production-ready example with ResNet-18, data augmentation, and LR scheduling.
+
+```bash
+python examples/resnet_fashion_mnist.py
+```
+
+**Model:** 11M parameters  
+**Training time:** ~5 min (GPU)
+
+### 🐛 Memory Leak Detection - CIFAR-10 ⚠️
+Interactive demo showing memory leak detection in action.
+
+```bash
+python examples/memory_leak_demo.py
+```
+
+**Shows:** Intentional leak vs correct implementation  
+**TrainWatch warns:** Memory leak detected automatically!
+
+👉 **Full examples documentation:** [examples/README.md](examples/README.md)
+
+---
+
+## 📊 Test Results & Benchmarks
+
+All examples tested on Kaggle with real GPUs. Full results in [`examples/*_results.md`](examples/).
+
+### Performance Summary
+
+| Example | GPU | Step Time | Accuracy | VRAM | Notes |
+|---------|-----|-----------|----------|------|-------|
+| **Simple CNN** | T4 | ~5ms | 75% | 25MB | 12x faster than CPU |
+| | P100 | ~4ms | 75% | 25MB | 15x faster than CPU |
+| **DenseNet121** | T4 | 331ms | 81.76% | 115MB | 224×224 images |
+| | P100 | 175ms | 82.15% | 115MB | **1.9x faster than T4** |
+| **ResNet-18** | T4 | 85ms | 92.28% | 147MB | Fashion-MNIST |
+| | P100 | 47ms | 91.86% | 148MB | **1.8x faster than T4** |
+| **Memory Leak** | Both | - | - | +1.2MB | **Leak detected!** ⚠️ |
+
+### Key Findings
+
+✅ **TrainWatch Overhead:** <1ms per step (negligible)  
+✅ **Memory Leak Detection:** Perfect - caught +1.2MB leak in 3 epochs  
+✅ **VRAM Tracking:** Accurate across all models (25MB - 4GB range)  
+✅ **Cross-GPU Consistency:** Identical behavior on T4 and P100  
+✅ **No False Positives:** 0 false alarms on healthy training runs
+
+### Kaggle Test Collection
+
+🔗 **Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/collections/trainwatch-examples)
+
+All examples ready to run with one click! Includes:
+- Simple CNN (CPU, T4, P100 tested)
+- DenseNet121 (production model)
+- ResNet-18 (Fashion-MNIST)
+- Memory Leak Demo (educational)
+
+---
+
 ## Requirements
 
 - Python 3.8+
@@ -146,11 +233,11 @@ From PyPI:
 pip install trainwatch
 ```
 
-From source:
+From source (for development):
 ```bash
-git clone https://github.com/yourusername/trainwatch.git
+git clone https://github.com/Hords01/trainwatch.git
 cd trainwatch
-pip install -e .
+pip install -e .  # Editable install
 ```
 
 ---
@@ -165,7 +252,19 @@ See `examples/cifar10_demo.py` for a complete working example.
 
 Found a bug? Have a feature request? 
 
-Open an issue or PR on [GitHub](https://github.com/yourusername/trainwatch)
+Open an issue or PR on [GitHub](https://github.com/Hords01/trainwatch)
+
+---
+
+## Author
+
+**Emirkan Beyaz**
+
+- 📧 Email: [emirkanbeyaz01@gmail.com](mailto:emirkanbeyaz01@gmail.com)
+- 💼 LinkedIn: [linkedin.com/in/emirkan-beyaz-07732933b](https://www.linkedin.com/in/emirkan-beyaz-07732933b)
+- 🔗 GitHub: [@Hords01](https://github.com/Hords01)
+
+Built with ❤️ for the PyTorch community
 
 ---
 
