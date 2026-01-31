@@ -6,7 +6,7 @@ This example shows how to use TrainWatch with a real PyTorch training loop
 Setup:
 1. Install TrainWatch: pip install -e .
 2. Install torchvision: pip install torchvision
-3. Run: python examples/cifar10_demo.py
+3. Run: python examples/cifar10_simple.py
 """
 
 import torch
