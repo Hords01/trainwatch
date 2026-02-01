@@ -207,7 +207,7 @@ All examples tested on Kaggle with real GPUs. Full results in [`examples/*_resul
 
 ### Kaggle Test Collection
 
-🔗 **Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/collections/trainwatch-examples)
+🔗 **Try it yourself:** [TrainWatch Examples on Kaggle]([https://www.kaggle.com/collections/trainwatch-examples](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch))
 
 All examples ready to run with one click! Includes:
 - Simple CNN (CPU, T4, P100 tested)
