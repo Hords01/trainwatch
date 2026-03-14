@@ -9,10 +9,14 @@ It shows two scenarios:
 Common causes of memory leaks in PyTorch:
 - Not detaching tensors before storing them
 - Accumulating computation graph in lists
-- Storing loss values without .item()
+- Storing loss values without .item() or .detach()
 - Not clearing gradients properly
 
 TrainWatch will catch these issues automatically!
+
+v0.2.0 Update: Now uses tensor support for better performance
+- watcher.step(loss=loss) instead of loss.item()
+- TrainWatch handles tensors efficiently with batch sync
 """
 import torch
 import torch.nn as nn
@@ -46,8 +50,9 @@ def train_correct(device):
     """
     CORRECT training - no memory leak
 
-    Best practices:
-    - Use .item() to extract scalar values
+    Best practices (v0.2.0):
+    - Pass tensors directly to TrainWatch (faster!)
+    - Or use .item() to extract scalars (also correct)
     - Don't store tensors unnecessarily
     - Clear gradients properly
     """
@@ -83,9 +88,10 @@ def train_correct(device):
         num_workers=2
     )
 
-    # TrainWatch
+    # TrainWatch (v0.2.0 - Tensor Support)
     watcher = Watcher(
         print_every=100,
+        sync_interval=10,       # batch sync for performance
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
@@ -110,8 +116,9 @@ def train_correct(device):
             loss.backward()
             optimizer.step()
 
-            # ✅ CORRECT: Using .item() - this extracts a Python scalar
-            watcher.step(loss=loss.item())
+            # ✅ CORRECT (v0.2.0): Pass tensor directly for better performance
+            # Also correct: loss.item() (backward compatible)
+            watcher.step(loss=loss)
 
         watcher.epoch_end()
 
@@ -159,9 +166,10 @@ def train_with_leak(device):
         num_workers=2
     )
 
-    # TrainWatch
+    # TrainWatch (v0.2.0 - Tensor Support)
     watcher = Watcher(
         print_every=100,
+        sync_interval=10,       # batch sync for performance
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
@@ -192,8 +200,8 @@ def train_with_leak(device):
             # ❌ MISTAKE: Storing the tensor (keeps computation graph alive!)
             loss_history.append(loss) # This causes memory leak!
 
-            # still pass .item() to TrainWatch (for monitoring)
-            watcher.step(loss=loss.item())
+            # TrainWatch can use tensor too (v0.2.0), but the leak is above!
+            watcher.step(loss=loss)
 
         watcher.epoch_end()
 
@@ -249,7 +257,3 @@ if __name__ == "__main__":
     print("  python memory_leak_demo.py leak     # Run only leak version\n")
 
     main()
-
-
-
-

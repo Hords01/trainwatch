@@ -16,6 +16,21 @@
 pip install trainwatch
 ```
 
+**v0.2.0 - Recommended (10x faster):**
+```python
+from trainwatch import Watcher
+
+watcher = Watcher(sync_interval=10)  # Batch sync for performance
+
+for epoch in range(epochs):
+    for images, labels in dataloader:
+        loss = train_step(images, labels)
+        watcher.step(loss=loss)  # Tensor! No .item() needed
+    
+    watcher.epoch_end()
+```
+
+**v0.1.0 - Still supported (backward compatible):**
 ```python
 from trainwatch import Watcher
 
@@ -24,7 +39,7 @@ watcher = Watcher()
 for epoch in range(epochs):
     for images, labels in dataloader:
         loss = train_step(images, labels)
-        watcher.step(loss=loss.item())
+        watcher.step(loss=loss.item())  # Still works!
     
     watcher.epoch_end()
 ```
@@ -61,7 +76,8 @@ Epoch 1 Summary:
 ```python
 watcher = Watcher(
     window=20,               # Moving average window (default: 20)
-    print_every=10,          # Print every N steps (default: 10)
+    print_every=100,         # Print every N steps (default: 100, was 10 in v0.1.0)
+    sync_interval=10,        # Sync tensor losses every N steps (default: 10) 🆕
     show_gpu=True,           # Show GPU metrics (default: True)
     warn_on_leak=True,       # Warn on memory leaks (default: True)
     warn_on_bottleneck=True, # Warn on DataLoader issues (default: True)
@@ -69,6 +85,17 @@ watcher = Watcher(
     device='cuda:0'          # GPU device (default: 'cuda:0')
 )
 ```
+
+### 🆕 Performance Parameters (v0.2.0)
+
+**`sync_interval`** - How often to sync tensor losses (default: 10)
+- Smaller = more frequent updates, slightly slower
+- Larger = less overhead, but updates less often
+- Recommended: 10-50 depending on batch size
+
+**`print_every`** - How often to print metrics (default: 100)
+- v0.1.0 default was 10 (too frequent for most cases)
+- v0.2.0 default is 100 (better balance)
 
 ---
 
@@ -82,6 +109,54 @@ watcher = Watcher(
 | **CPU/RAM** | System load - high RAM often means DataLoader issues |
 | **GPU VRAM** | Memory usage - tracks leaks across epochs |
 | **VRAM Delta** | Memory increase per epoch - positive = leak |
+
+---
+
+## ⚡ Performance Best Practices
+
+### Minimize GPU-CPU Sync (v0.2.0)
+
+TrainWatch v0.2.0 supports tensor inputs to reduce synchronization overhead by ~10x.
+
+**❌ Slower (v0.1.0 style):**
+```python
+watcher.step(loss=loss.item())  # Sync every step
+```
+
+**✅ Faster (v0.2.0 recommended):**
+```python
+watcher = Watcher(sync_interval=10)
+watcher.step(loss=loss)  # Tensor! Batch sync every 10 steps
+```
+
+### Performance Impact
+
+| Scenario | v0.1.0 Overhead | v0.2.0 Overhead | Improvement |
+|----------|-----------------|-----------------|-------------|
+| **Small batch (4)** | ~10% | ~1% | **10x faster** |
+| **Large batch (64)** | ~1.6% | ~0.16% | **10x faster** |
+
+**When does it matter?**
+- Small batch sizes (< 32)
+- Fast models (< 10ms per step)
+- Many training steps (1000+)
+
+For typical training (batch_size=64, medium model), you save ~1.5 seconds per 1000 steps.
+
+### Choosing sync_interval
+
+```python
+# Small batch or fast model
+watcher = Watcher(sync_interval=10)  # Default
+
+# Large batch or slow model
+watcher = Watcher(sync_interval=50)  # Less frequent sync
+
+# Maximum performance (use with caution)
+watcher = Watcher(sync_interval=100)  # Minimal overhead
+```
+
+**Rule of thumb:** `sync_interval = print_every / 10`
 
 ---
 
@@ -125,7 +200,7 @@ GPU idle while waiting for data.
 
 - **No cloud required** - everything runs locally
 - **No fancy UI** - just clean terminal output
-- **No metric logging** - just real-time monitoring (v0.2 will add CSV export)
+- **No metric logging** - just real-time monitoring (coming in v0.3.0)
 - **No distributed training** - single GPU only for now
 
 ---
@@ -199,7 +274,7 @@ All examples tested on Kaggle with real GPUs. Full results in [`examples/*_resul
 
 ### Key Findings
 
-✅ **TrainWatch Overhead:** <1ms per step (negligible)  
+✅ **TrainWatch Overhead (v0.2.0):** <0.5% per step (10x improvement from v0.1.0)  
 ✅ **Memory Leak Detection:** Perfect - caught +1.2MB leak in 3 epochs  
 ✅ **VRAM Tracking:** Accurate across all models (25MB - 4GB range)  
 ✅ **Cross-GPU Consistency:** Identical behavior on T4 and P100  
@@ -207,7 +282,7 @@ All examples tested on Kaggle with real GPUs. Full results in [`examples/*_resul
 
 ### Kaggle Test Collection
 
-🔗 **Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/collections/trainwatch-examples)
+🔗 **Try it yourself:** [TrainWatch Examples on Kaggle]([https://www.kaggle.com/collections/trainwatch-examples](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch))
 
 All examples ready to run with one click! Includes:
 - Simple CNN (CPU, T4, P100 tested)

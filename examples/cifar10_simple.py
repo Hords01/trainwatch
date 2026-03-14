@@ -3,6 +3,10 @@ TrainWatch Demo with CIFAR-10
 
 This example shows how to use TrainWatch with a real PyTorch training loop
 
+v0.2.0 Update: Now uses tensor support for 10x better performance!
+- watcher.step(loss=loss) instead of loss.item()
+- sync_interval=10 for batch synchronization
+
 Setup:
 1. Install TrainWatch: pip install -e .
 2. Install torchvision: pip install torchvision
@@ -66,10 +70,11 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # Initialize TrainWatch
+    # Initialize TrainWatch (v0.2.0 - Tensor Support)
     watcher = Watcher(
         window=20,
-        print_every=50, # print every 50 steps
+        print_every=50,         # print every 50 steps
+        sync_interval=10,       # batch sync every 10 steps (10x faster!)
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=True,
@@ -99,7 +104,8 @@ def main():
             optimizer.step()
 
             # TrainWatch monitoring - just one line!
-            watcher.step(loss=loss.item())
+            # v0.2.0: Pass tensor directly (10x faster than .item())
+            watcher.step(loss=loss)
 
         # end of epoch
         watcher.epoch_end()
