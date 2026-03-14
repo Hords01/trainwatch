@@ -15,7 +15,7 @@ This directory contains examples demonstrating TrainWatch capabilities across di
 | **ResNet-18** | T4, P100 | 92% accuracy, 1.8x P100 speedup | [resnet_results.md](resnet_results.md) |
 | **Memory Leak Demo** | T4, P100 | Perfect leak detection (+1.2MB) | [memory_leak_results.md](memory_leak_results.md) |
 
-🔗 **Kaggle Collection:** [TrainWatch Examples](https://www.kaggle.com/collections/trainwatch-examples) - Try them yourself!
+🔗 **Kaggle Collection:** [TrainWatch Examples](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch) - Try them yourself!
 
 ---
 
