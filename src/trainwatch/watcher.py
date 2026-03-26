@@ -6,6 +6,12 @@ from typing import Optional
 from .system import SystemMonitor
 from .metrics import LossTracker
 
+try:
+    import torch as _torch
+    _TORCH = _torch
+except ImportError:
+    _TORCH = None
+
 
 class Watcher:
     """
@@ -23,7 +29,7 @@ class Watcher:
         >>> for epoch in range(epochs):
         ...   for images, labels in dataloader:
         ...       loss = train_step(images, labels)
-        ...       watcher.step(loss=loss)  # Tensor! 10x faster
+        ...       watcher.step(loss=loss)  # Tensor! ~5x faster on GPU
         ...   watcher.epoch_end()
 
     Example (v0.1.0 - Backward Compatible):
@@ -75,13 +81,16 @@ class Watcher:
         self.step_count = 0
         self.epoch_count = 0
         self.last_step_time = time.time()
-        self.epoch_start_time: Optional[float] = None
 
         # baselines (set at end of first epoch)
         self.baselines_set = False
 
         # tensor batching (v0.2.0)
         self.loss_buffer = []
+
+        # memory leak tracking
+        self._vram_delta_prev: Optional[float] = None
+        self._vram_growth_streak: int = 0
 
     def step(self, loss) -> None:
         """
@@ -99,12 +108,7 @@ class Watcher:
         step_time = now - self.last_step_time
         self.last_step_time = now
 
-        # detect type and handle accordingly
-        try:
-            import torch
-            is_tensor = torch.is_tensor(loss)
-        except ImportError:
-            is_tensor = False
+        is_tensor = _TORCH is not None and _TORCH.is_tensor(loss)
 
         if is_tensor:
             # tensor path - batch accumulation for performance
@@ -117,7 +121,7 @@ class Watcher:
             # Flush buffered tensors first
             if self.loss_buffer:
                 self._sync_losses()
-            self._add_loss(loss)
+            self.loss_tracker.add(loss)
 
         # should we print?
         if self.step_count % self.print_every != 0:
@@ -133,7 +137,8 @@ class Watcher:
         if loss_avg is not None:
             msg += f"loss={loss_avg:.4f} | "
         else:
-            msg += f"loss={loss:.4f} | "
+            loss_val = loss.item() if is_tensor else float(loss)
+            msg += f"loss={loss_val:.4f} | "
 
         msg += f"time={step_time:.3f}s | "
         msg += f"CPU={metrics['cpu_percent']:.1f}% | "
@@ -167,6 +172,7 @@ class Watcher:
         # epoch summary
         loss_avg = self.loss_tracker.get_moving_average()
         trend = self.loss_tracker.get_trend()
+        vram_delta = self.system_monitor.get_vram_delta()
 
         msg = f"\n{'='*60}\n"
         msg += f"Epoch {self.epoch_count} Summary:\n"
@@ -177,56 +183,63 @@ class Watcher:
                 msg += f" [{trend}]"
             msg += "\n"
 
-        # VRAM delta
-        if self.show_gpu:
-            vram_delta = self.system_monitor.get_vram_delta()
-            if vram_delta is not None:
-                msg += f"   VRAM delta: {vram_delta:+.1f}MB\n"
+        if self.show_gpu and vram_delta is not None:
+            msg += f"   VRAM delta: {vram_delta:+.1f}MB\n"
 
         msg += f'='*60
         print(msg)
 
         # check for memory leak
         if self.warn_on_leak and self.show_gpu:
-            vram_delta = self.system_monitor.get_vram_delta()
-            if vram_delta is not None and vram_delta > 50: # > 50MB increase
-                print(f"⚠️  WARNING: Possible memory leak (+{vram_delta:.0f}MB VRAM since baseline)")
+            self._check_memory_leak(vram_delta)
+
+    def _check_memory_leak(self, vram_delta: Optional[float]) -> None:
+        """
+        Detect memory leaks using two complementary signals:
+        1. Absolute threshold: delta from baseline > 10MB
+        2. Consecutive growth: VRAM grew >5MB for 2+ consecutive epochs
+
+        Research basis: PyTorch community practice recommends checking
+        memory_allocated() growth across epochs. Normal allocator
+        fragmentation causes <5MB variation; sustained growth signals a leak.
+        """
+        if vram_delta is None:
+            return
+
+        # track per-epoch growth using cumulative delta
+        if self._vram_delta_prev is not None:
+            epoch_growth = vram_delta - self._vram_delta_prev
+            if epoch_growth > 5:
+                self._vram_growth_streak += 1
+            else:
+                self._vram_growth_streak = 0
+        self._vram_delta_prev = vram_delta
+
+        if vram_delta > 10:
+            print(f"⚠️  WARNING: Possible memory leak (+{vram_delta:.1f}MB VRAM since baseline)")
+        elif self._vram_growth_streak >= 2:
+            print(f"⚠️  WARNING: Possible memory leak (VRAM growing {self._vram_growth_streak} consecutive epochs, +{vram_delta:.1f}MB total)")
 
     def _sync_losses(self) -> None:
         """
         Synchronize buffered tensor losses (batch sync)
 
         This performs a single GPU-CPU sync for all buffered losses,
-        reducing overhead by ~10x compared to syncing every step.
+        reducing overhead by ~5x on GPU compared to syncing every step.
         """
         if not self.loss_buffer:
             return
 
         try:
-            import torch
-            # stack and mean on GPU
-            losses = torch.stack(self.loss_buffer)
+            losses = _TORCH.stack(self.loss_buffer)
             avg_loss = losses.mean().item()  # single sync!
-
-            # add to tracker
             self.loss_tracker.add(avg_loss)
-
-            # clear buffer
             self.loss_buffer.clear()
         except Exception:
             # fallback: process individually
             for loss_tensor in self.loss_buffer:
                 self.loss_tracker.add(loss_tensor.item())
             self.loss_buffer.clear()
-
-    def _add_loss(self, loss: float) -> None:
-        """
-        Add loss directly (backward compatible path)
-
-        Args:
-            loss: Loss value as float
-        """
-        self.loss_tracker.add(loss)
 
     def _check_warnings(self, step_time: float, metrics: dict) -> None:
         """Check for warning conditions"""
@@ -236,10 +249,10 @@ class Watcher:
             if self.loss_tracker.detect_variance_spike():
                 print("⚠️  WARNING: Loss variance spike detected - training may be unstable")
 
-        # DataLoader bottlenect
+        # DataLoader bottleneck
         if self.warn_on_bottleneck and self.show_gpu:
             # simple heuristic: if GPU VRAM is allocated but step is slow
-            if 'vram_mb' in metrics and metrics['vram_mb'] > 100: # GPU is being used
-                if step_time > 0.5: # but step is slow
-                    if metrics['cpu_percent'] < 50: # and CPU is idle
+            if 'vram_mb' in metrics and metrics['vram_mb'] > 100:  # GPU is being used
+                if step_time > 0.5:  # but step is slow
+                    if metrics['cpu_percent'] < 50:  # and CPU is idle
                         print("⚠️  WARNING: Possible DataLoader bottleneck (slow steps, idle CPU)")

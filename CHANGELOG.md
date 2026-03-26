@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Tensor Support**: `step()` now accepts `torch.Tensor` directly (no `.item()` required)
 - **Batch Synchronization**: New `sync_interval` parameter for performance optimization
-  - Reduces GPU-CPU sync overhead by ~10x
+  - Reduces GPU-CPU sync overhead by ~5x on GPU (no benefit on CPU-only training)
   - Default: `sync_interval=10` (sync every 10 steps)
 - **Performance Optimization**: Minimal overhead (<1%) even with small batch sizes
 - **Automatic Buffer Flush**: Remaining tensors are synced at `epoch_end()`
@@ -50,15 +50,15 @@ New performant style:
 ```python
 # v0.2.0 style (recommended)
 watcher = Watcher(sync_interval=10)
-watcher.step(loss=loss)  # 10x faster!
+watcher.step(loss=loss)  # ~5x faster on GPU!
 ```
 
 ### 📊 Performance Improvements
 
 | Scenario | v0.1.0 | v0.2.0 | Improvement |
 |----------|--------|--------|-------------|
-| Small batch (4) | 10% overhead | 1% overhead | 10x faster |
-| Large batch (64) | 1.6% overhead | 0.16% overhead | 10x faster |
+| GPU (1K steps) | ~265ms | ~50ms | ~5x faster |
+| CPU training | baseline | similar | no benefit |
 
 ### 🙏 Acknowledgments
 
@@ -73,10 +73,10 @@ Special thanks to community feedback that identified the `.item()` synchronizati
 - **One line of code** monitoring for PyTorch training
 - **Loss tracking**: Moving average, variance, trends
 - **System monitoring**: CPU, RAM, GPU VRAM usage
-- **Memory leak detection**: Warns when VRAM increases >50MB per epoch
+- **Memory leak detection**: Warns when VRAM increases >10MB from baseline or grows consistently
 - **DataLoader bottleneck detection**: Identifies slow data loading
 - **Variance spike detection**: Alerts on training instability
-- **Lightweight**: Minimal dependencies (torch, psutil, numpy)
+- **Lightweight**: Minimal dependencies (torch, psutil)
 
 ### Features
 

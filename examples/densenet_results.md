@@ -19,6 +19,7 @@ TrainWatch test results with DenseNet121 from torchvision.models across differen
 ```python
 watcher = Watcher(
     print_every=100,
+    sync_interval=10,       # batch sync every 10 steps (~5x faster on GPU)
     show_gpu=True,
     warn_on_leak=True,
     warn_on_bottleneck=True,
@@ -348,7 +349,7 @@ Even with:
 - ✅ Peak VRAM tracking
 
 If there were issues, TrainWatch would have warned:
-- ⚠️ Memory leak: "VRAM increasing +50MB per epoch"
+- ⚠️ Memory leak: "VRAM growing >10MB from baseline or >5MB/epoch for 2+ consecutive epochs"
 - ⚠️ DataLoader bottleneck: "GPU idle while waiting for data"
 - ⚠️ Loss variance spike: "Training may be unstable"
 

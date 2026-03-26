@@ -2,7 +2,6 @@
 Loss metrics and trend analysis
 """
 
-import numpy as np
 from collections import deque
 from typing import Optional
 
@@ -34,7 +33,7 @@ class LossTracker:
         """
         if len(self.losses) < 5:
             return None
-        return float(np.mean(self.losses))
+        return sum(self.losses) / len(self.losses)
 
     def get_variance(self) -> Optional[float]:
         """
@@ -45,7 +44,8 @@ class LossTracker:
         """
         if len(self.losses) < 10:
             return None
-        return float(np.var(self.losses))
+        mean = sum(self.losses) / len(self.losses)
+        return sum((x - mean) ** 2 for x in self.losses) / len(self.losses)
 
     def set_variance_baseline(self) -> None:
         """set current variance as baseline for comparison"""
@@ -85,11 +85,11 @@ class LossTracker:
         if len(self.losses) < 10:
             return None
 
-        losses_array = np.array(self.losses)
-        mid = len(losses_array) // 2
+        losses_list = list(self.losses)
+        mid = len(losses_list) // 2
 
-        first_half_mean = np.mean(losses_array[:mid])
-        second_half_mean = np.mean(losses_array[mid:])
+        first_half_mean = sum(losses_list[:mid]) / mid
+        second_half_mean = sum(losses_list[mid:]) / (len(losses_list) - mid)
 
         diff = second_half_mean - first_half_mean
 
@@ -102,22 +102,3 @@ class LossTracker:
             return 'increasing'
         else:
             return 'stable'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

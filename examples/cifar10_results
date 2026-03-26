@@ -1,0 +1,121 @@
+# CIFAR10 Simple CNN Results (v0.2.0)
+
+**Test Platform:** Kaggle GPU T4
+**TrainWatch Version:** v0.2.0 (tensor support)
+**Date:** March 2026
+
+---
+
+## Test Setup
+
+**Model:** Simple CNN (2 conv + 2 FC, ~100K params)
+**Dataset:** CIFAR-10 (32×32, 50K train, 10K test)
+**Batch Size:** 64
+**Epochs:** 3
+**Optimizer:** Adam (lr=0.001)
+
+**v0.2.0 Configuration:**
+```python
+watcher = Watcher(
+    window=20,
+    print_every=50,
+    sync_interval=10,       # ~5x faster on GPU
+    show_gpu=True,
+    warn_on_leak=True,
+    device='cuda'
+)
+watcher.step(loss=loss)     # Tensor support
+```
+
+---
+
+## Results Summary
+
+| Metric | Epoch 1 | Epoch 2 | Epoch 3 |
+|--------|---------|---------|---------|
+| **Loss** | 2.04 → 1.09 | 1.09 → 0.91 | 0.91 → 0.79 |
+| **VRAM** | 26MB | 26MB | 26MB |
+| **Delta** | baseline | +0.0MB ✅ | +0.0MB ✅ |
+| **Step Time** | 0.015-0.020s | 0.003-0.006s | 0.003-0.004s |
+| **Status** | baseline set | stable | stable |
+
+**Final Loss:** 0.79
+**Memory Leak:** None detected ✅
+**Performance:** Tensor support working, fast sync
+
+---
+
+## Kaggle T4 Training Output (v0.2.0)
+
+```
+Using device: cuda
+
+Starting training with TrainWatch monitoring...
+============================================================
+Step     50 | loss=2.0442 | time=0.015s | CPU=30.6% | RAM=8.4% | VRAM=26MB
+Step    100 | loss=1.8703 | time=0.020s | CPU=61.8% | RAM=8.4% | VRAM=26MB
+Step    150 | loss=1.7579 | time=0.018s | CPU=64.7% | RAM=8.4% | VRAM=26MB
+Step    200 | loss=1.6726 | time=0.015s | CPU=64.1% | RAM=8.4% | VRAM=26MB
+...
+Step    750 | loss=1.1172 | time=0.016s | CPU=65.3% | RAM=8.4% | VRAM=26MB
+✓ Epoch 1 complete - baselines set
+
+Step    800 | loss=1.0958 | time=0.003s | CPU=60.8% | RAM=8.0% | VRAM=26MB
+Step    900 | loss=1.0373 | time=0.006s | CPU=65.6% | RAM=8.0% | VRAM=26MB
+Step   1000 | loss=0.9892 | time=0.006s | CPU=65.7% | RAM=8.1% | VRAM=26MB
+...
+Step   1550 | loss=0.9147 | time=0.016s | CPU=64.8% | RAM=8.0% | VRAM=26MB
+
+============================================================
+Epoch 2 Summary:
+   Loss (avg): 0.9130 [stable]
+   VRAM delta: +0.0MB
+============================================================
+
+Step   1600 | loss=0.8952 | time=0.004s | CPU=64.8% | RAM=8.0% | VRAM=26MB
+Step   1700 | loss=0.8511 | time=0.006s | CPU=66.0% | RAM=8.0% | VRAM=26MB
+...
+Step   2300 | loss=0.7855 | time=0.004s | CPU=66.7% | RAM=8.0% | VRAM=26MB
+
+============================================================
+Epoch 3 Summary:
+   Loss (avg): 0.7880 [stable]
+   VRAM delta: +0.0MB
+============================================================
+
+Training complete!
+```
+
+---
+
+## Key Findings
+
+**v0.2.0 Tensor Support:**
+- ✅ Step time: 0.003-0.020s (fast, no .item() overhead)
+- ✅ Loss decreasing smoothly (2.04 → 0.79)
+- ✅ VRAM stable (26MB, no leak)
+- ✅ No warnings issued
+
+**Performance:**
+- Epoch 1: Slower (baseline setup, 0.015-0.020s)
+- Epoch 2-3: Fast (0.003-0.006s average)
+- sync_interval=10 working correctly
+
+**Memory Management:**
+- VRAM: 26MB (consistent)
+- Delta: +0.0MB (perfect)
+- No memory leak detected
+
+---
+
+## Reproducing
+
+**Kaggle Notebook:**
+```python
+!git clone https://github.com/Hords01/trainwatch.git
+%cd trainwatch
+!pip install -e .
+!python examples/cifar10_simple.py
+```
+
+**Runtime:** ~2 minutes (3 epochs, GPU T4)

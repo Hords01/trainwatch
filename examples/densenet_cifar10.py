@@ -7,7 +7,7 @@ This example demonstrates TrainWatch with torchvision.models:
 - Gradient clipping
 - Learning rate scheduling
 
-DensNet is a production-grade architecture from PyTorch's model zoo,
+DenseNet is a production-grade architecture from PyTorch's model zoo,
 making it a perfect example of monitoring real-world models
 
 TrainWatch will help monitor:
@@ -128,13 +128,14 @@ def main():
         gamma=0.2
     )
 
-    # Initialize TrainWatch
+    # Initialize TrainWatch (v0.2.0 - Tensor Support)
     print("Starting training with TrainWatch monitoring...")
     print("=" * 60)
 
     watcher = Watcher(
         window=20,
-        print_every=100, # print every 100 steps
+        print_every=100,        # print every 100 steps
+        sync_interval=10,       # batch sync every 10 steps (~5x faster on GPU)
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=True,
@@ -166,7 +167,8 @@ def main():
             optimizer.step()
 
             # TrainWatch monitoring - just one line!
-            watcher.step(loss=loss.item())
+            # v0.2.0: Pass tensor directly for better GPU performance
+            watcher.step(loss=loss)
 
             # track accuracy
             running_loss += loss.item()

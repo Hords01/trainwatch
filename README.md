@@ -16,7 +16,7 @@
 pip install trainwatch
 ```
 
-**v0.2.0 - Recommended (10x faster):**
+**v0.2.0 - Recommended (~5x faster on GPU):**
 ```python
 from trainwatch import Watcher
 
@@ -116,7 +116,7 @@ watcher = Watcher(
 
 ### Minimize GPU-CPU Sync (v0.2.0)
 
-TrainWatch v0.2.0 supports tensor inputs to reduce synchronization overhead by ~10x.
+TrainWatch v0.2.0 supports tensor inputs to reduce synchronization overhead by ~5x on GPU.
 
 **❌ Slower (v0.1.0 style):**
 ```python
@@ -133,8 +133,8 @@ watcher.step(loss=loss)  # Tensor! Batch sync every 10 steps
 
 | Scenario | v0.1.0 Overhead | v0.2.0 Overhead | Improvement |
 |----------|-----------------|-----------------|-------------|
-| **Small batch (4)** | ~10% | ~1% | **10x faster** |
-| **Large batch (64)** | ~1.6% | ~0.16% | **10x faster** |
+| **GPU training** | ~265ms/1K steps | ~50ms/1K steps | **~5x faster** |
+| **CPU training** | baseline | similar | no benefit (CPU has no sync cost) |
 
 **When does it matter?**
 - Small batch sizes (< 32)
@@ -170,7 +170,7 @@ Your loss is jumping around wildly. Training might diverge.
 **Likely cause:** Learning rate too high, bad batch, or data issue
 
 ### 🔴 Memory Leak
-VRAM increasing +50MB per epoch.
+VRAM growing >10MB since baseline, or consistently increasing >5MB for 2+ consecutive epochs.
 
 **Likely cause:** Tensors not released, gradients accumulating, or Python refs
 
@@ -218,29 +218,19 @@ python examples/cifar10_simple.py
 
 **Tested on:** Kaggle CPU, GPU T4, GPU P100  
 **Training time:** ~2 min (GPU)  
-**Results:** [examples/cifar10_results.md](examples/cifar10_results.md)
+**Results:** [examples/cifar10_results](examples/cifar10_results)
 
-### 🏗️ DenseNet121 - CIFAR-10 🆕
+### 🏗️ DenseNet121 - CIFAR-10
 Real PyTorch model from torchvision.models, training from scratch.
 
 ```bash
 python examples/densenet_cifar10.py
 ```
 
-**Model:** DenseNet121 (weights=None, ~7M params)  
-**Image size:** 224×224 (CIFAR resized)  
-**VRAM:** ~850MB  
-**Shows:** Production architecture, gradient clipping
-
-### 🚀 Advanced ResNet - Fashion-MNIST  
-Production-ready example with ResNet-18, data augmentation, and LR scheduling.
-
-```bash
-python examples/resnet_fashion_mnist.py
-```
-
-**Model:** 11M parameters  
-**Training time:** ~5 min (GPU)
+**Model:** DenseNet121 (weights=None, ~7M params)
+**Image size:** 224×224 (CIFAR resized)
+**VRAM:** ~850MB
+**Shows:** torchvision.models integration, gradient clipping, LR scheduling
 
 ### 🐛 Memory Leak Detection - CIFAR-10 ⚠️
 Interactive demo showing memory leak detection in action.
@@ -268,26 +258,23 @@ All examples tested on Kaggle with real GPUs. Full results in [`examples/*_resul
 | | P100 | ~4ms | 75% | 25MB | 15x faster than CPU |
 | **DenseNet121** | T4 | 331ms | 81.76% | 115MB | 224×224 images |
 | | P100 | 175ms | 82.15% | 115MB | **1.9x faster than T4** |
-| **ResNet-18** | T4 | 85ms | 92.28% | 147MB | Fashion-MNIST |
-| | P100 | 47ms | 91.86% | 148MB | **1.8x faster than T4** |
-| **Memory Leak** | Both | - | - | +1.2MB | **Leak detected!** ⚠️ |
+| **Memory Leak** | Both | - | - | grows | **Leak detected!** ⚠️ |
 
 ### Key Findings
 
-✅ **TrainWatch Overhead (v0.2.0):** <0.5% per step (10x improvement from v0.1.0)  
-✅ **Memory Leak Detection:** Perfect - caught +1.2MB leak in 3 epochs  
+✅ **TrainWatch Overhead (v0.2.0):** <0.5% per step (~5x improvement on GPU from v0.1.0)
+✅ **Memory Leak Detection:** VRAM tracked per epoch (warns at >10MB or consistent growth)
 ✅ **VRAM Tracking:** Accurate across all models (25MB - 4GB range)  
 ✅ **Cross-GPU Consistency:** Identical behavior on T4 and P100  
 ✅ **No False Positives:** 0 false alarms on healthy training runs
 
 ### Kaggle Test Collection
 
-🔗 **Try it yourself:** [TrainWatch Examples on Kaggle]([https://www.kaggle.com/collections/trainwatch-examples](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch))
+🔗 **Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch)
 
 All examples ready to run with one click! Includes:
 - Simple CNN (CPU, T4, P100 tested)
-- DenseNet121 (production model)
-- ResNet-18 (Fashion-MNIST)
+- DenseNet121 (production model, torchvision.models)
 - Memory Leak Demo (educational)
 
 ---
@@ -295,9 +282,8 @@ All examples ready to run with one click! Includes:
 ## Requirements
 
 - Python 3.8+
-- PyTorch 1.9+
+- PyTorch 2.0+
 - psutil
-- numpy
 
 ---
 
@@ -314,12 +300,6 @@ git clone https://github.com/Hords01/trainwatch.git
 cd trainwatch
 pip install -e .  # Editable install
 ```
-
----
-
-## Examples
-
-See `examples/cifar10_demo.py` for a complete working example.
 
 ---
 

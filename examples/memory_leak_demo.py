@@ -1,22 +1,18 @@
 """
-TrainWatch example: Memory Leak Detection Demo
+TrainWatch Example: Memory Leak Detection Demo
 
-This example demonstrates TrainWatch's memory leak detection capability
+This example demonstrates TrainWatch's memory leak detection capability.
 It shows two scenarios:
 1. CORRECT training (no leak) - TrainWatch shows clean VRAM delta
 2. INCORRECT training (with leak) - TrainWatch detects and warns about memory leak
 
 Common causes of memory leaks in PyTorch:
 - Not detaching tensors before storing them
-- Accumulating computation graph in lists
-- Storing loss values without .item() or .detach()
+- Accumulating computation graphs in lists
+- Storing loss values without .item()
 - Not clearing gradients properly
 
 TrainWatch will catch these issues automatically!
-
-v0.2.0 Update: Now uses tensor support for better performance
-- watcher.step(loss=loss) instead of loss.item()
-- TrainWatch handles tensors efficiently with batch sync
 """
 import torch
 import torch.nn as nn
@@ -27,7 +23,8 @@ import sys
 
 from trainwatch import Watcher
 
-# simple CNN (same as cifar10_simple.py)
+
+# Simple CNN (same as cifar10_simple.py)
 class SimpleCNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -46,13 +43,13 @@ class SimpleCNN(nn.Module):
         x = self.fc2(x)
         return x
 
+
 def train_correct(device):
     """
-    CORRECT training - no memory leak
+    CORRECT training - no memory leak.
 
-    Best practices (v0.2.0):
-    - Pass tensors directly to TrainWatch (faster!)
-    - Or use .item() to extract scalars (also correct)
+    Best practices:
+    - Use .item() to extract scalar values
     - Don't store tensors unnecessarily
     - Clear gradients properly
     """
@@ -65,7 +62,7 @@ def train_correct(device):
     print("  ✓ Properly clearing gradients")
     print("=" * 70 + "\n")
 
-    # setup
+    # Setup
     model = SimpleCNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -75,30 +72,19 @@ def train_correct(device):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    trainset = datasets.CIFAR10(
-        root='./data',
-        train=True,
-        download=True,
-        transform=transform
-    )
-    trainloader = DataLoader(
-        trainset,
-        batch_size=64,
-        shuffle=True,
-        num_workers=2
-    )
+    trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    trainloader = DataLoader(trainset, batch_size=64, shuffle=True, num_workers=2)
 
-    # TrainWatch (v0.2.0 - Tensor Support)
+    # TrainWatch
     watcher = Watcher(
         print_every=100,
-        sync_interval=10,       # batch sync for performance
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
-        warn_on_variance=False,
+        warn_on_variance=False
     )
 
-    # training loop
+    # Training loop
     num_epochs = 3
 
     for epoch in range(num_epochs):
@@ -107,23 +93,23 @@ def train_correct(device):
         for i, (images, labels) in enumerate(trainloader):
             images, labels = images.to(device), labels.to(device)
 
-            # forward pass
+            # Forward pass
             outputs = model(images)
             loss = criterion(outputs, labels)
 
-            # backward pass
+            # Backward pass
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            # ✅ CORRECT (v0.2.0): Pass tensor directly for better performance
-            # Also correct: loss.item() (backward compatible)
-            watcher.step(loss=loss)
+            # ✅ CORRECT: Using .item() - this extracts a Python scalar
+            watcher.step(loss=loss.item())
 
         watcher.epoch_end()
 
     print("\n✅ Training complete - NO MEMORY LEAK detected!")
     print("VRAM delta should be ~0MB (small variations are normal)\n")
+
 
 def train_with_leak(device):
     """
@@ -143,7 +129,7 @@ def train_with_leak(device):
     print("  ✗ VRAM keeps growing!")
     print("=" * 70 + "\n")
 
-    # setup
+    # Setup
     model = SimpleCNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -153,33 +139,22 @@ def train_with_leak(device):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    trainset = datasets.CIFAR10(
-        root='./data',
-        train=True,
-        download=True,
-        transform=transform
-    )
-    trainloader = DataLoader(
-        trainset,
-        batch_size=64,
-        shuffle=True,
-        num_workers=2
-    )
+    trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    trainloader = DataLoader(trainset, batch_size=64, shuffle=True, num_workers=2)
 
-    # TrainWatch (v0.2.0 - Tensor Support)
+    # TrainWatch
     watcher = Watcher(
         print_every=100,
-        sync_interval=10,       # batch sync for performance
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
-        warn_on_variance=False,
+        warn_on_variance=False
     )
 
-    # ❌ INTENTIONAL MISTAKE Store loss tensors (not .item()!)
-    loss_history = [] # This will cause a memory leak!
+    # ❌ INTENTIONAL MISTAKE: Store loss tensors (not .item()!)
+    loss_history = []  # This will cause a memory leak!
 
-    # training loop
+    # Training loop
     num_epochs = 3
 
     for epoch in range(num_epochs):
@@ -188,35 +163,38 @@ def train_with_leak(device):
         for i, (images, labels) in enumerate(trainloader):
             images, labels = images.to(device), labels.to(device)
 
-            # forward pass
+            # Forward pass
             outputs = model(images)
             loss = criterion(outputs, labels)
 
-            # backward pass
+            # Backward pass
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             # ❌ MISTAKE: Storing the tensor (keeps computation graph alive!)
-            loss_history.append(loss) # This causes memory leak!
+            loss_history.append(loss)  # This causes memory leak!
 
-            # TrainWatch can use tensor too (v0.2.0), but the leak is above!
-            watcher.step(loss=loss)
+            # Still pass .item() to TrainWatch (for monitoring)
+            watcher.step(loss=loss.item())
 
         watcher.epoch_end()
 
-    print("\n⚠️  Training complete - MEMORY LEAK DETECTED!")
+    print("\n⚠️  Training complete - MEMORY LEAK PRESENT!")
     print(f"Stored {len(loss_history)} loss tensors in memory!")
-    print("TrainWatch should have warned about increasing VRAM\n")
+    print("Note: TrainWatch warns when VRAM grows >10MB from baseline")
+    print("or >5MB/epoch for 2+ consecutive epochs.")
+    print("On larger models this leak grows much faster and will trigger a warning.\n")
+
 
 def main():
-    # check arguments
+    # Check arguments
     if len(sys.argv) > 1:
         mode = sys.argv[1].lower()
     else:
         mode = "both"
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"\nUsing device: {device}")
     if torch.cuda.is_available():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
@@ -234,7 +212,7 @@ def main():
         train_correct(device)
 
     if mode == "leak" or mode == "both":
-        # clear GPU memory between runs
+        # Clear GPU memory between runs
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
@@ -250,7 +228,7 @@ def main():
     print("=" * 70 + "\n")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print("\nUsage:")
     print("  python memory_leak_demo.py          # Run both scenarios")
     print("  python memory_leak_demo.py correct  # Run only correct version")

@@ -58,22 +58,3 @@ class SystemMonitor:
 
         current = torch.cuda.memory_allocated(self.device) / (1024 ** 2)
         return current - self.vram_baseline
-
-    def detect_dataloader_bottleneck(self, gpu_util: float, step_time: float) -> bool:
-        """
-        Detect if DataLoader is bottlenecking training
-
-        Simple heuristic: if step time is high but GPU utilization is low, likely waiting for data
-
-        Args:
-            gpu_util: PU utilization percentage (0-100)
-            step_time: Time taken for this step in seconds
-
-        Returns:
-            True if bottleneck detected
-        """
-        # if step takes > 0.5s but GPU is < 50% utilized
-        return step_time > 0.5 and gpu_util < 50.0
-
-
-

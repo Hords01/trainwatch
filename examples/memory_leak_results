@@ -225,9 +225,11 @@ Epoch 3 Summary:
    VRAM delta: +0.8MB  ← Leak growing!
 ============================================================
 
-⚠️  Training complete - MEMORY LEAK DETECTED!
+⚠️  Training complete - MEMORY LEAK PRESENT!
 Stored 2346 loss tensors in memory!
-TrainWatch should have warned about increasing VRAM
+Note: TrainWatch warns when VRAM grows >10MB from baseline
+or >5MB/epoch for 2+ consecutive epochs.
+On larger models this leak grows much faster and will trigger a warning.
 ```
 
 ### Observations (T4 - INCORRECT)
@@ -356,9 +358,11 @@ Epoch 3 Summary:
    VRAM delta: +0.8MB  ← Leak growing!
 ============================================================
 
-⚠️  Training complete - MEMORY LEAK DETECTED!
+⚠️  Training complete - MEMORY LEAK PRESENT!
 Stored 2346 loss tensors in memory!
-TrainWatch should have warned about increasing VRAM
+Note: TrainWatch warns when VRAM grows >10MB from baseline
+or >5MB/epoch for 2+ consecutive epochs.
+On larger models this leak grows much faster and will trigger a warning.
 ```
 
 ### Observations (P100 - INCORRECT)
@@ -381,7 +385,7 @@ TrainWatch should have warned about increasing VRAM
 | **VRAM Delta** | +0.0MB | +1.2MB total | **LEAK!** |
 | **RAM Usage** | 7.2-7.3% | 7.8-7.9% | +0.6% |
 | **Tensors Stored** | 0 | 2,346 | **HUGE!** |
-| **TrainWatch Warns** | No | Yes | ⚠️ |
+| **TrainWatch Warns** | No | No (below threshold*) | — |
 
 #### P100 GPU
 | Metric | CORRECT | INCORRECT | Difference |
@@ -390,7 +394,11 @@ TrainWatch should have warned about increasing VRAM
 | **VRAM Delta** | +0.0MB | +1.2MB total | **LEAK!** |
 | **RAM Usage** | 7.0-7.2% | 7.3-7.5% | +0.3% |
 | **Tensors Stored** | 0 | 2,346 | **HUGE!** |
-| **TrainWatch Warns** | No | Yes | ⚠️ |
+| **TrainWatch Warns** | No | No (below threshold*) | — |
+
+*TrainWatch warns when VRAM grows >10MB from baseline OR >5MB/epoch for 2+ consecutive epochs.
+The +0.4MB/epoch growth in this small model demo is below both thresholds. On larger models
+(ResNet-50, BERT) the same bug causes GBs of leak and would trigger a warning immediately.
 
 **Key Observation:** Leak behavior is **identical** across both GPUs!
 
@@ -469,11 +477,11 @@ Epoch 3: VRAM delta: +0.0MB  ← No warning
 
 **INCORRECT Training:**
 ```
-Epoch 2: VRAM delta: +0.4MB  ← Would warn at >50MB
-Epoch 3: VRAM delta: +0.8MB  ← Would warn at >50MB
+Epoch 2: VRAM delta: +0.4MB  ← growing
+Epoch 3: VRAM delta: +0.8MB  ← growing
 ```
 
-**Note:** TrainWatch's default threshold is 50MB to avoid false positives from PyTorch's memory allocator. The leak in this demo (+1.2MB) is real but small. With more epochs, TrainWatch would trigger a warning.
+**Note:** TrainWatch warns when VRAM grows >10MB from baseline OR >5MB/epoch for 2+ consecutive epochs. The leak in this demo (+0.4MB/epoch on a tiny model) is real but below both thresholds. On larger models the same bug produces GBs of leak and TrainWatch would warn immediately.
 
 ### 4. GPU-Independent Behavior
 

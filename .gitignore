@@ -24,6 +24,7 @@ wheels/
 venv/
 ENV/
 env/
+.venv/
 
 # PyCharm
 .idea/
@@ -36,19 +37,6 @@ Thumbs.db
 data/
 *.pth
 *.pkl
-```
 
----
-
-## 🔧 PyCharm Özel Ayarlar
-
-### Mark Directory As
-`src/` klasörüne sağ tık → Mark Directory as → Sources Root
-- Bu import'ları düzeltir: `from trainwatch import Watcher`
-
-### Run/Debug Configuration
-CIFAR-10 örneği için:
-```
-Script path: examples/cifar10_demo.py
-Working directory: /trainwatch
-Python interpreter: Project Default (venv)
+# Private / Claude analysis files
+for_claude/

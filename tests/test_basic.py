@@ -48,7 +48,7 @@ def test_loss_tracker():
 
     # add some losses
     for i in range(15):
-        tracker.add(2.0 -i * 0.1)
+        tracker.add(2.0 - i * 0.1)
 
     avg = tracker.get_moving_average()
     assert avg is not None
@@ -105,5 +105,3 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("All tests passed! ✓")
     print("=" * 60)
-
-
