@@ -9,7 +9,7 @@ TrainWatch test results with DenseNet121 from torchvision.models across differen
 **Model:** DenseNet121 (torchvision.models, weights=None)  
 **Parameters:** 6,964,106 (~7M)  
 **Dataset:** CIFAR-10 (50,000 training images)  
-**Image size:** 224×224 (resized from 32×32)  
+**Image size:** 224x224 (resized from 32x32)
 **Batch size:** 32  
 **Epochs:** 5  
 **Optimizer:** SGD (lr=0.1, momentum=0.9, weight_decay=1e-4)  
@@ -36,7 +36,7 @@ watcher = Watcher(
 | Kaggle GPU T4 | Tesla T4 | ~0.331s | 1x (baseline) | 81.76% | 115MB | 4112MB |
 | Kaggle GPU P100 | Tesla P100 | ~0.175s | **1.9x faster** | 82.15% | 115MB | 4112MB |
 
-**Key Observation:** P100 is nearly 2x faster than T4 for this larger model with 224×224 images!
+**Key Observation:** P100 is nearly 2x faster than T4 for this larger model with 224x224 images!
 
 ---
 
@@ -57,7 +57,7 @@ Step    100 | loss=2.1095 | time=0.304s | CPU=31.2% | RAM=9.0% | VRAM=115MB
 Step    500 | loss=1.6268 | time=0.327s | CPU=32.0% | RAM=9.3% | VRAM=115MB
 Step   1000 | loss=1.4253 | time=0.329s | CPU=31.9% | RAM=9.2% | VRAM=115MB
 Step   1500 | loss=1.1427 | time=0.331s | CPU=31.9% | RAM=9.2% | VRAM=115MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 Train Accuracy: 43.05% | LR: 0.100000
 Test Accuracy: 56.26% | Test Loss: 1.1907
 ```
@@ -131,15 +131,15 @@ Peak GPU Memory: 4112MB
 ```
 
 ### Observations (T4)
-- ✅ **Step Time:** Consistent ~0.330s per step (300ms+)
-- ✅ **CPU Usage:** 31-32% (good utilization)
-- ✅ **RAM Usage:** 9.0-9.5% (efficient)
-- ✅ **VRAM:** Stable at 115MB during training
-- ✅ **VRAM Delta:** +0.0MB across all epochs (no leak!)
-- ✅ **Peak VRAM:** 4112MB (during data loading/setup)
-- ✅ **Loss:** Steadily decreasing (2.11 → 0.51)
-- ✅ **Test Accuracy:** Strong progression (56.26% → 81.76%)
-- ✅ **Trend Detection:** Correctly identified [decreasing], [stable], [increasing] trends
+- **Step Time:** Consistent ~0.330s per step (300ms+)
+- **CPU Usage:** 31-32% (good utilization)
+- **RAM Usage:** 9.0-9.5% (efficient)
+- **VRAM:** Stable at 115MB during training
+- **VRAM Delta:** +0.0MB across all epochs (no leak!)
+- **Peak VRAM:** 4112MB (during data loading/setup)
+- **Loss:** Steadily decreasing (2.11 -> 0.51)
+- **Test Accuracy:** Strong progression (56.26% -> 81.76%)
+- **Trend Detection:** Correctly identified [decreasing], [stable], [increasing] trends
 
 ---
 
@@ -160,7 +160,7 @@ Step    100 | loss=2.0870 | time=0.175s | CPU=34.5% | RAM=8.8% | VRAM=115MB
 Step    500 | loss=1.6256 | time=0.175s | CPU=36.8% | RAM=9.0% | VRAM=115MB
 Step   1000 | loss=1.4363 | time=0.175s | CPU=36.8% | RAM=8.9% | VRAM=115MB
 Step   1500 | loss=1.2703 | time=0.175s | CPU=36.8% | RAM=9.1% | VRAM=115MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 Train Accuracy: 43.42% | LR: 0.100000
 Test Accuracy: 56.79% | Test Loss: 1.2843
 ```
@@ -234,15 +234,15 @@ Peak GPU Memory: 4112MB
 ```
 
 ### Observations (P100)
-- 🚀 **Step Time:** Consistent ~0.175s per step (**1.9x faster than T4!**)
-- ✅ **CPU Usage:** 36-37% (higher than T4, good)
-- ✅ **RAM Usage:** 8.5-9.2% (efficient)
-- ✅ **VRAM:** Stable at 115MB during training
-- ✅ **VRAM Delta:** +0.0MB across all epochs (no leak!)
-- ✅ **Peak VRAM:** 4112MB (same as T4)
-- ✅ **Loss:** Steadily decreasing (2.09 → 0.51)
-- ✅ **Test Accuracy:** Strong progression (56.79% → 82.15%)
-- ✅ **Final Accuracy:** Slightly better than T4 (82.15% vs 81.76%)
+- **Step Time:** Consistent ~0.175s per step (**1.9x faster than T4!**)
+- **CPU Usage:** 36-37% (higher than T4, good)
+- **RAM Usage:** 8.5-9.2% (efficient)
+- **VRAM:** Stable at 115MB during training
+- **VRAM Delta:** +0.0MB across all epochs (no leak!)
+- **Peak VRAM:** 4112MB (same as T4)
+- **Loss:** Steadily decreasing (2.09 -> 0.51)
+- **Test Accuracy:** Strong progression (56.79% -> 82.15%)
+- **Final Accuracy:** Slightly better than T4 (82.15% vs 81.76%)
 
 ---
 
@@ -256,7 +256,7 @@ Peak GPU Memory: 4112MB
 | **Total Time (approx)** | ~43 min | ~23 min | **1.87x** |
 | **Steps per Second** | 3.02 | 5.71 | **1.89x** |
 
-**P100 advantage:** Nearly 2x faster for large images (224×224) and deeper models!
+**P100 advantage:** Nearly 2x faster for large images (224x224) and deeper models!
 
 ### Accuracy Progression
 
@@ -279,7 +279,7 @@ VRAM Delta: +0.0MB (no memory leak detected)
 ```
 
 **Why such high peak VRAM?**
-- 224×224 images use more memory
+- 224x224 images use more memory
 - DataLoader prefetching
 - Model initialization
 - Gradient buffers
@@ -296,12 +296,12 @@ VRAM Delta: +0.0MB (no memory leak detected)
 
 ### 1. Model Complexity vs Image Size
 ```
-DenseNet121 (224×224):
+DenseNet121 (224x224):
   Parameters: ~7M
   VRAM: 115MB training, 4112MB peak
   Step time (T4): 0.331s
-  
-vs Simple CNN (32×32):
+
+vs Simple CNN (32x32):
   Parameters: ~100K
   VRAM: 25MB
   Step time (T4): 0.005s
@@ -321,14 +321,14 @@ TrainWatch: No warnings issued
 
 Even with:
 - Larger model (7M params)
-- Larger images (224×224)
+- Larger images (224224)
 - Higher VRAM usage (115MB)
 - Complex architecture (Dense connections)
 
 **TrainWatch successfully monitored and confirmed no leaks!**
 
 ### 4. Training Stability
-- Loss decreased smoothly (2.1 → 0.5)
+- Loss decreased smoothly (2.1  0.5)
 - No variance spikes detected
 - No DataLoader bottlenecks
 - Gradient clipping worked (max_norm=1.0)
@@ -338,20 +338,20 @@ Even with:
 
 ## What TrainWatch Caught
 
-✅ **No Issues Detected** - This is a healthy training run!
+**No Issues Detected** - This is a healthy training run!
 
 **TrainWatch successfully monitored:**
-- ✅ Step timing consistency
-- ✅ VRAM stability (no leaks)
-- ✅ Loss trend detection ([decreasing], [stable], [increasing])
-- ✅ CPU/RAM utilization
-- ✅ Training progression across 5 epochs
-- ✅ Peak VRAM tracking
+- Step timing consistency
+- VRAM stability (no leaks)
+- Loss trend detection ([decreasing], [stable], [increasing])
+- CPU/RAM utilization
+- Training progression across 5 epochs
+- Peak VRAM tracking
 
 If there were issues, TrainWatch would have warned:
-- ⚠️ Memory leak: "VRAM growing >10MB from baseline or >5MB/epoch for 2+ consecutive epochs"
-- ⚠️ DataLoader bottleneck: "GPU idle while waiting for data"
-- ⚠️ Loss variance spike: "Training may be unstable"
+- Memory leak: "VRAM growing >10MB from baseline or >5MB/epoch for 2+ consecutive epochs"
+- DataLoader bottleneck: "GPU idle while waiting for data"
+- Loss variance spike: "Training may be unstable"
 
 ---
 
@@ -378,7 +378,7 @@ python examples/densenet_cifar10.py
 **Expected runtime:**
 - GPU T4: ~43 minutes (5 epochs)
 - GPU P100: ~23 minutes (5 epochs)
-- CPU: ~6-8 hours (not recommended for 224×224 images)
+- CPU: ~6-8 hours (not recommended for 224224 images)
 
 ---
 
@@ -387,20 +387,20 @@ python examples/densenet_cifar10.py
 DenseNet121 training with TrainWatch was successful across both GPU types:
 
 **Performance:**
-- ✅ T4: Solid performance (~0.33s/step)
-- ✅ P100: Excellent performance (~0.18s/step, 1.9x faster)
+- T4: Solid performance (~0.33s/step)
+- P100: Excellent performance (~0.18s/step, 1.9x faster)
 
 **Accuracy:**
-- ✅ Strong final accuracy: 81-82% on CIFAR-10
-- ✅ Smooth convergence
-- ✅ No training instabilities
+- Strong final accuracy: 81-82% on CIFAR-10
+- Smooth convergence
+- No training instabilities
 
 **TrainWatch Monitoring:**
-- ✅ Accurate VRAM tracking (115MB stable, 4112MB peak)
-- ✅ No false positives
-- ✅ Perfect memory leak detection (0.0MB delta)
-- ✅ Helpful trend detection
-- ✅ Minimal overhead (<1ms per step)
+- Accurate VRAM tracking (115MB stable, 4112MB peak)
+- No false positives
+- Perfect memory leak detection (0.0MB delta)
+- Helpful trend detection
+- Minimal overhead (<1ms per step)
 
 **This demonstrates:**
 1. TrainWatch works with **production PyTorch models** (torchvision.models)

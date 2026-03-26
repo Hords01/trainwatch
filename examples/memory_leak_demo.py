@@ -57,9 +57,9 @@ def train_correct(device):
     print("SCENARIO 1: CORRECT Training (No Memory Leak)")
     print("=" * 70)
     print("Best practices:")
-    print("  ✓ Using loss.item() to extract scalars")
-    print("  ✓ Not storing tensors in lists")
-    print("  ✓ Properly clearing gradients")
+    print("  Using loss.item() to extract scalars")
+    print("  Not storing tensors in lists")
+    print("  Properly clearing gradients")
     print("=" * 70 + "\n")
 
     # Setup
@@ -81,7 +81,9 @@ def train_correct(device):
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
-        warn_on_variance=False
+        warn_on_variance=False,
+        leak_threshold_mb=0.3,   # Low threshold for demo (small model)
+        leak_streak_mb=0.2,      # Low streak threshold for demo
     )
 
     # Training loop
@@ -102,12 +104,12 @@ def train_correct(device):
             loss.backward()
             optimizer.step()
 
-            # ✅ CORRECT: Using .item() - this extracts a Python scalar
+            # CORRECT: Using .item() - this extracts a Python scalar
             watcher.step(loss=loss.item())
 
         watcher.epoch_end()
 
-    print("\n✅ Training complete - NO MEMORY LEAK detected!")
+    print("\nTraining complete - NO MEMORY LEAK detected!")
     print("VRAM delta should be ~0MB (small variations are normal)\n")
 
 
@@ -124,9 +126,9 @@ def train_with_leak(device):
     print("SCENARIO 2: INCORRECT Training (With Memory Leak)")
     print("=" * 70)
     print("Common mistake:")
-    print("  ✗ Storing loss tensors (not .item()) in a list")
-    print("  ✗ This keeps computation graphs in memory")
-    print("  ✗ VRAM keeps growing!")
+    print("  Storing loss tensors (not .item()) in a list")
+    print("  This keeps computation graphs in memory")
+    print("  VRAM keeps growing!")
     print("=" * 70 + "\n")
 
     # Setup
@@ -148,10 +150,12 @@ def train_with_leak(device):
         show_gpu=torch.cuda.is_available(),
         warn_on_leak=True,
         warn_on_bottleneck=False,
-        warn_on_variance=False
+        warn_on_variance=False,
+        leak_threshold_mb=0.3,   # Low threshold for demo (small model)
+        leak_streak_mb=0.2,      # Low streak threshold for demo
     )
 
-    # ❌ INTENTIONAL MISTAKE: Store loss tensors (not .item()!)
+    # INTENTIONAL MISTAKE: Store loss tensors (not .item()!)
     loss_history = []  # This will cause a memory leak!
 
     # Training loop
@@ -172,7 +176,7 @@ def train_with_leak(device):
             loss.backward()
             optimizer.step()
 
-            # ❌ MISTAKE: Storing the tensor (keeps computation graph alive!)
+            # MISTAKE: Storing the tensor (keeps computation graph alive!)
             loss_history.append(loss)  # This causes memory leak!
 
             # Still pass .item() to TrainWatch (for monitoring)
@@ -180,11 +184,11 @@ def train_with_leak(device):
 
         watcher.epoch_end()
 
-    print("\n⚠️  Training complete - MEMORY LEAK PRESENT!")
+    print("\nWARNING: Training complete - MEMORY LEAK PRESENT!")
     print(f"Stored {len(loss_history)} loss tensors in memory!")
-    print("Note: TrainWatch warns when VRAM grows >10MB from baseline")
-    print("or >5MB/epoch for 2+ consecutive epochs.")
-    print("On larger models this leak grows much faster and will trigger a warning.\n")
+    print("TrainWatch warned above because VRAM grew consistently across epochs.")
+    print("Default thresholds: >10MB total or >5MB/epoch for 2+ epochs.")
+    print("This demo uses lower thresholds (0.3MB / 0.2MB) to catch the small demo model leak.\n")
 
 
 def main():
@@ -221,10 +225,10 @@ def main():
     print("\n" + "=" * 70)
     print("Demo Complete!")
     print("=" * 70)
-    print("\n💡 Key Takeaway:")
+    print("\nKey Takeaway:")
     print("Always use loss.item() to extract scalars!")
     print("Don't store tensors unnecessarily - it causes memory leaks.")
-    print("\nTrainWatch will warn you when VRAM increases across epochs.")
+    print("\nTrainWatch warns when VRAM grows (thresholds configurable via leak_threshold_mb / leak_streak_mb).")
     print("=" * 70 + "\n")
 
 

@@ -9,7 +9,7 @@
 ## Test Setup
 
 **Model:** Simple CNN (2 conv + 2 FC, ~100K params)
-**Dataset:** CIFAR-10 (32×32, 50K train, 10K test)
+**Dataset:** CIFAR-10 (3232, 50K train, 10K test)
 **Batch Size:** 64
 **Epochs:** 3
 **Optimizer:** Adam (lr=0.001)
@@ -33,14 +33,14 @@ watcher.step(loss=loss)     # Tensor support
 
 | Metric | Epoch 1 | Epoch 2 | Epoch 3 |
 |--------|---------|---------|---------|
-| **Loss** | 2.04 → 1.09 | 1.09 → 0.91 | 0.91 → 0.79 |
+| **Loss** | 2.04  1.09 | 1.09  0.91 | 0.91  0.79 |
 | **VRAM** | 26MB | 26MB | 26MB |
-| **Delta** | baseline | +0.0MB ✅ | +0.0MB ✅ |
+| **Delta** | baseline | +0.0MB | +0.0MB |
 | **Step Time** | 0.015-0.020s | 0.003-0.006s | 0.003-0.004s |
 | **Status** | baseline set | stable | stable |
 
 **Final Loss:** 0.79
-**Memory Leak:** None detected ✅
+**Memory Leak:** None detected
 **Performance:** Tensor support working, fast sync
 
 ---
@@ -58,7 +58,7 @@ Step    150 | loss=1.7579 | time=0.018s | CPU=64.7% | RAM=8.4% | VRAM=26MB
 Step    200 | loss=1.6726 | time=0.015s | CPU=64.1% | RAM=8.4% | VRAM=26MB
 ...
 Step    750 | loss=1.1172 | time=0.016s | CPU=65.3% | RAM=8.4% | VRAM=26MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 
 Step    800 | loss=1.0958 | time=0.003s | CPU=60.8% | RAM=8.0% | VRAM=26MB
 Step    900 | loss=1.0373 | time=0.006s | CPU=65.6% | RAM=8.0% | VRAM=26MB
@@ -91,10 +91,10 @@ Training complete!
 ## Key Findings
 
 **v0.2.0 Tensor Support:**
-- ✅ Step time: 0.003-0.020s (fast, no .item() overhead)
-- ✅ Loss decreasing smoothly (2.04 → 0.79)
-- ✅ VRAM stable (26MB, no leak)
-- ✅ No warnings issued
+- Step time: 0.003-0.020s (fast, no .item() overhead)
+- Loss decreasing smoothly (2.04  0.79)
+- VRAM stable (26MB, no leak)
+- No warnings issued
 
 **Performance:**
 - Epoch 1: Slower (baseline setup, 0.015-0.020s)

@@ -9,7 +9,7 @@ TrainWatch memory leak detection demonstration - comparing CORRECT implementatio
 **Model:** Simple CNN (same as cifar10_simple.py)  
 **Parameters:** ~100,000  
 **Dataset:** CIFAR-10 (50,000 training images)  
-**Image size:** 32×32  
+**Image size:** 32x32
 **Batch size:** 64  
 **Epochs:** 3 (limited for demo purposes)  
 
@@ -32,24 +32,24 @@ watcher = Watcher(
 
 ## Results Summary
 
-### CORRECT Implementation (No Leak) ✅
+### CORRECT Implementation (No Leak)
 
 | GPU | Epoch 1 | Epoch 2 Delta | Epoch 3 Delta | Final VRAM | Total Leak |
 |-----|---------|---------------|---------------|------------|------------|
-| **T4** | 25MB | **+0.0MB** | **+0.0MB** | 25MB | **0MB** ✅ |
-| **P100** | 25MB | **+0.0MB** | **+0.0MB** | 25MB | **0MB** ✅ |
+| **T4** | 25MB | **+0.0MB** | **+0.0MB** | 25MB | **0MB** |
+| **P100** | 25MB | **+0.0MB** | **+0.0MB** | 25MB | **0MB** |
 
-**TrainWatch Verdict:** ✅ **NO LEAK DETECTED**  
+**TrainWatch Verdict:** **NO LEAK DETECTED**  
 **Code:** Uses `loss.item()` correctly
 
-### INCORRECT Implementation (With Leak) ⚠️
+### INCORRECT Implementation (With Leak)
 
 | GPU | Epoch 1 | Epoch 2 Delta | Epoch 3 Delta | Final VRAM | Total Leak |
 |-----|---------|---------------|---------------|------------|------------|
-| **T4** | 25-26MB | **+0.4MB** ⚠️ | **+0.8MB** ⚠️ | 26MB | **+1.2MB** |
-| **P100** | 25-26MB | **+0.4MB** ⚠️ | **+0.8MB** ⚠️ | 26MB | **+1.2MB** |
+| **T4** | 25-26MB | **+0.4MB** | **+0.8MB** | 26MB | **+1.2MB** |
+| **P100** | 25-26MB | **+0.4MB** | **+0.8MB** | 26MB | **+1.2MB** |
 
-**TrainWatch Verdict:** ⚠️ **MEMORY LEAK DETECTED**  
+**TrainWatch Verdict:** **MEMORY LEAK DETECTED**  
 **Leak Size:** 2,346 loss tensors stored in memory!  
 **Bug:** Storing `loss` instead of `loss.item()`
 
@@ -58,14 +58,14 @@ watcher = Watcher(
 Epoch 2: +0.4MB
 Epoch 3: +0.8MB (doubling!)
 Projected 10 epochs: ~20MB leak
-Projected 100 epochs: ~200MB leak → OOM crash!
+Projected 100 epochs: ~200MB leak -- OOM crash!
 ```
 
 ---
 
 ## The Bug Explained
 
-### CORRECT Code ✅
+### CORRECT Code
 ```python
 loss_values = []  # Will store Python scalars
 
@@ -75,7 +75,7 @@ for images, labels in trainloader:
     loss.backward()
     optimizer.step()
     
-    # ✅ CORRECT: Extract scalar value
+    # CORRECT: Extract scalar value
     watcher.step(loss=loss.item())
 ```
 
@@ -85,7 +85,7 @@ for images, labels in trainloader:
 - Garbage collector can free memory
 - VRAM stays constant
 
-### INCORRECT Code ❌
+### INCORRECT Code
 ```python
 loss_history = []  # Will store PyTorch tensors!
 
@@ -95,7 +95,7 @@ for images, labels in trainloader:
     loss.backward()
     optimizer.step()
     
-    # ❌ BUG: Storing the entire tensor
+    # BUG: Storing the entire tensor
     loss_history.append(loss)  # Keeps computation graph alive!
     
     watcher.step(loss=loss.item())
@@ -109,7 +109,7 @@ for images, labels in trainloader:
 
 ---
 
-## 1. GPU T4 - CORRECT Implementation ✅
+## 1. GPU T4 - CORRECT Implementation
 
 ### System Info
 ```
@@ -128,7 +128,7 @@ Step    400 | loss=1.1941 | time=0.009s | CPU=71.9% | RAM=7.6% | VRAM=25MB
 Step    500 | loss=1.2523 | time=0.004s | CPU=65.8% | RAM=7.7% | VRAM=25MB
 Step    600 | loss=1.1689 | time=0.005s | CPU=66.9% | RAM=7.7% | VRAM=25MB
 Step    700 | loss=1.0949 | time=0.007s | CPU=70.4% | RAM=7.7% | VRAM=25MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 
 Step    800 | loss=0.9934 | time=0.005s | CPU=64.2% | RAM=7.2% | VRAM=25MB
 Step    900 | loss=1.0223 | time=0.006s | CPU=67.0% | RAM=7.2% | VRAM=25MB
@@ -142,7 +142,7 @@ Step   1500 | loss=0.9180 | time=0.005s | CPU=65.9% | RAM=7.3% | VRAM=25MB
 ============================================================
 Epoch 2 Summary:
    Loss (avg): 0.9106 [stable]
-   VRAM delta: +0.0MB  ← Perfect!
+   VRAM delta: +0.0MB   Perfect!
 ============================================================
 
 Step   1600 | loss=0.7960 | time=0.009s | CPU=68.7% | RAM=7.3% | VRAM=25MB
@@ -157,24 +157,24 @@ Step   2300 | loss=0.7788 | time=0.017s | CPU=65.2% | RAM=7.3% | VRAM=25MB
 ============================================================
 Epoch 3 Summary:
    Loss (avg): 0.7620 [stable]
-   VRAM delta: +0.0MB  ← Perfect!
+   VRAM delta: +0.0MB   Perfect!
 ============================================================
 
-✅ Training complete - NO MEMORY LEAK detected!
+Training complete - NO MEMORY LEAK detected!
 VRAM delta should be ~0MB (small variations are normal)
 ```
 
 ### Observations (T4 - CORRECT)
-- ✅ **VRAM:** Perfectly stable at 25MB across ALL epochs
-- ✅ **VRAM Delta:** +0.0MB (no leak!)
-- ✅ **Loss:** Decreasing smoothly (1.63 → 0.76)
-- ✅ **CPU:** 64-72% (good utilization)
-- ✅ **RAM:** 7.2-7.7% (efficient)
-- ✅ **TrainWatch:** No warnings issued
+- **VRAM:** Perfectly stable at 25MB across ALL epochs
+- **VRAM Delta:** +0.0MB (no leak!)
+- **Loss:** Decreasing smoothly (1.63 -> 0.76)
+- **CPU:** 64-72% (good utilization)
+- **RAM:** 7.2-7.7% (efficient)
+- **TrainWatch:** No warnings issued
 
 ---
 
-## 2. GPU T4 - INCORRECT Implementation ❌
+## 2. GPU T4 - INCORRECT Implementation
 
 ### System Info
 ```
@@ -189,11 +189,11 @@ SCENARIO 2: INCORRECT Training (With Memory Leak)
 Step    100 | loss=1.6219 | time=0.011s | CPU=68.4% | RAM=7.8% | VRAM=25MB
 Step    200 | loss=1.3789 | time=0.020s | CPU=65.3% | RAM=7.8% | VRAM=25MB
 Step    300 | loss=1.3203 | time=0.017s | CPU=66.0% | RAM=7.8% | VRAM=25MB
-Step    400 | loss=1.2921 | time=0.020s | CPU=63.6% | RAM=7.8% | VRAM=26MB  ← Growing!
+Step    400 | loss=1.2921 | time=0.020s | CPU=63.6% | RAM=7.8% | VRAM=26MB   Growing!
 Step    500 | loss=1.1795 | time=0.014s | CPU=65.2% | RAM=7.9% | VRAM=26MB
 Step    600 | loss=1.1647 | time=0.021s | CPU=66.3% | RAM=7.8% | VRAM=26MB
 Step    700 | loss=1.1331 | time=0.015s | CPU=66.0% | RAM=7.8% | VRAM=26MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 
 Step    800 | loss=0.9995 | time=0.005s | CPU=66.1% | RAM=7.7% | VRAM=26MB
 Step    900 | loss=0.9769 | time=0.005s | CPU=66.2% | RAM=7.8% | VRAM=26MB
@@ -207,7 +207,7 @@ Step   1500 | loss=0.8797 | time=0.020s | CPU=66.4% | RAM=7.9% | VRAM=26MB
 ============================================================
 Epoch 2 Summary:
    Loss (avg): 0.9147 [decreasing]
-   VRAM delta: +0.4MB  ← Leak detected!
+   VRAM delta: +0.4MB   Leak detected!
 ============================================================
 
 Step   1600 | loss=0.7673 | time=0.005s | CPU=64.9% | RAM=7.8% | VRAM=26MB
@@ -222,10 +222,10 @@ Step   2300 | loss=0.7847 | time=0.014s | CPU=67.2% | RAM=7.9% | VRAM=26MB
 ============================================================
 Epoch 3 Summary:
    Loss (avg): 0.6912 [decreasing]
-   VRAM delta: +0.8MB  ← Leak growing!
+   VRAM delta: +0.8MB   Leak growing!
 ============================================================
 
-⚠️  Training complete - MEMORY LEAK PRESENT!
+WARNING: Training complete - MEMORY LEAK PRESENT!
 Stored 2346 loss tensors in memory!
 Note: TrainWatch warns when VRAM grows >10MB from baseline
 or >5MB/epoch for 2+ consecutive epochs.
@@ -233,16 +233,16 @@ On larger models this leak grows much faster and will trigger a warning.
 ```
 
 ### Observations (T4 - INCORRECT)
-- ⚠️ **VRAM:** Growing! 25MB → 26MB → +0.4MB → +0.8MB
-- ⚠️ **Total Leak:** +1.2MB in just 3 epochs
-- ⚠️ **Leak Pattern:** Exponential growth (0.4 → 0.8)
-- ⚠️ **Leak Size:** 2,346 loss tensors in memory
-- ⚠️ **RAM:** Slightly higher (7.8-7.9% vs 7.2-7.7%)
-- ⚠️ **Bug Impact:** Would crash after ~100 epochs
+- **VRAM:** Growing! 25MB -> 26MB -> +0.4MB -> +0.8MB
+- **Total Leak:** +1.2MB in just 3 epochs
+- **Leak Pattern:** Exponential growth (0.4 -> 0.8)
+- **Leak Size:** 2,346 loss tensors in memory
+- **RAM:** Slightly higher (7.8-7.9% vs 7.2-7.7%)
+- **Bug Impact:** Would crash after ~100 epochs
 
 ---
 
-## 3. GPU P100 - CORRECT Implementation ✅
+## 3. GPU P100 - CORRECT Implementation
 
 ### System Info
 ```
@@ -261,7 +261,7 @@ Step    400 | loss=1.3507 | time=0.004s | CPU=65.1% | RAM=7.8% | VRAM=25MB
 Step    500 | loss=1.2483 | time=0.004s | CPU=65.7% | RAM=7.8% | VRAM=25MB
 Step    600 | loss=1.1935 | time=0.004s | CPU=63.7% | RAM=7.7% | VRAM=25MB
 Step    700 | loss=1.1391 | time=0.004s | CPU=65.3% | RAM=7.8% | VRAM=25MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 
 Step    800 | loss=0.9864 | time=0.006s | CPU=62.8% | RAM=7.2% | VRAM=25MB
 Step    900 | loss=1.0013 | time=0.004s | CPU=67.0% | RAM=7.2% | VRAM=25MB
@@ -275,7 +275,7 @@ Step   1500 | loss=0.9230 | time=0.022s | CPU=63.5% | RAM=7.2% | VRAM=25MB
 ============================================================
 Epoch 2 Summary:
    Loss (avg): 0.9012 [increasing]
-   VRAM delta: +0.0MB  ← Perfect!
+   VRAM delta: +0.0MB   Perfect!
 ============================================================
 
 Step   1600 | loss=0.8111 | time=0.004s | CPU=64.2% | RAM=7.2% | VRAM=25MB
@@ -290,24 +290,24 @@ Step   2300 | loss=0.7393 | time=0.014s | CPU=65.8% | RAM=7.0% | VRAM=25MB
 ============================================================
 Epoch 3 Summary:
    Loss (avg): 0.7855 [stable]
-   VRAM delta: +0.0MB  ← Perfect!
+   VRAM delta: +0.0MB   Perfect!
 ============================================================
 
-✅ Training complete - NO MEMORY LEAK detected!
+Training complete - NO MEMORY LEAK detected!
 VRAM delta should be ~0MB (small variations are normal)
 ```
 
 ### Observations (P100 - CORRECT)
-- ✅ **VRAM:** Perfectly stable at 25MB
-- ✅ **VRAM Delta:** +0.0MB (no leak!)
-- ✅ **Loss:** Decreasing smoothly (1.66 → 0.79)
-- ✅ **CPU:** 62-71% (good utilization)
-- ✅ **RAM:** 7.0-7.8% (efficient)
-- ✅ **TrainWatch:** No warnings
+- **VRAM:** Perfectly stable at 25MB
+- **VRAM Delta:** +0.0MB (no leak!)
+- **Loss:** Decreasing smoothly (1.66 -> 0.79)
+- **CPU:** 62-71% (good utilization)
+- **RAM:** 7.0-7.8% (efficient)
+- **TrainWatch:** No warnings
 
 ---
 
-## 4. GPU P100 - INCORRECT Implementation ❌
+## 4. GPU P100 - INCORRECT Implementation
 
 ### System Info
 ```
@@ -322,11 +322,11 @@ SCENARIO 2: INCORRECT Training (With Memory Leak)
 Step    100 | loss=1.6212 | time=0.003s | CPU=65.5% | RAM=7.3% | VRAM=25MB
 Step    200 | loss=1.4002 | time=0.004s | CPU=68.4% | RAM=7.4% | VRAM=25MB
 Step    300 | loss=1.3477 | time=0.011s | CPU=64.5% | RAM=7.4% | VRAM=25MB
-Step    400 | loss=1.2626 | time=0.010s | CPU=66.8% | RAM=7.4% | VRAM=26MB  ← Growing!
+Step    400 | loss=1.2626 | time=0.010s | CPU=66.8% | RAM=7.4% | VRAM=26MB   Growing!
 Step    500 | loss=1.1896 | time=0.004s | CPU=64.9% | RAM=7.4% | VRAM=26MB
 Step    600 | loss=1.1464 | time=0.004s | CPU=65.1% | RAM=7.4% | VRAM=26MB
 Step    700 | loss=1.0957 | time=0.004s | CPU=63.3% | RAM=7.4% | VRAM=26MB
-✓ Epoch 1 complete - baselines set
+Epoch 1 complete - baselines set
 
 Step    800 | loss=1.0765 | time=0.017s | CPU=64.6% | RAM=7.3% | VRAM=26MB
 Step    900 | loss=1.0270 | time=0.015s | CPU=64.8% | RAM=7.4% | VRAM=26MB
@@ -340,7 +340,7 @@ Step   1500 | loss=0.8666 | time=0.018s | CPU=66.4% | RAM=7.4% | VRAM=26MB
 ============================================================
 Epoch 2 Summary:
    Loss (avg): 0.8759 [decreasing]
-   VRAM delta: +0.4MB  ← Leak detected!
+   VRAM delta: +0.4MB   Leak detected!
 ============================================================
 
 Step   1600 | loss=0.8067 | time=0.008s | CPU=64.9% | RAM=7.3% | VRAM=26MB
@@ -355,10 +355,10 @@ Step   2300 | loss=0.8116 | time=0.007s | CPU=66.2% | RAM=7.4% | VRAM=26MB
 ============================================================
 Epoch 3 Summary:
    Loss (avg): 0.7741 [stable]
-   VRAM delta: +0.8MB  ← Leak growing!
+   VRAM delta: +0.8MB   Leak growing!
 ============================================================
 
-⚠️  Training complete - MEMORY LEAK PRESENT!
+WARNING: Training complete - MEMORY LEAK PRESENT!
 Stored 2346 loss tensors in memory!
 Note: TrainWatch warns when VRAM grows >10MB from baseline
 or >5MB/epoch for 2+ consecutive epochs.
@@ -366,11 +366,11 @@ On larger models this leak grows much faster and will trigger a warning.
 ```
 
 ### Observations (P100 - INCORRECT)
-- ⚠️ **VRAM:** Growing! 25MB → 26MB → +0.4MB → +0.8MB
-- ⚠️ **Total Leak:** +1.2MB in just 3 epochs
-- ⚠️ **Leak Pattern:** Exponential (same as T4!)
-- ⚠️ **Leak Size:** 2,346 loss tensors
-- ⚠️ **RAM:** Higher (7.3-7.5% vs 7.0-7.2%)
+- **VRAM:** Growing! 25MB -> 26MB -> +0.4MB -> +0.8MB
+- **Total Leak:** +1.2MB in just 3 epochs
+- **Leak Pattern:** Exponential (same as T4!)
+- **Leak Size:** 2,346 loss tensors
+- **RAM:** Higher (7.3-7.5% vs 7.0-7.2%)
 
 ---
 
@@ -385,7 +385,7 @@ On larger models this leak grows much faster and will trigger a warning.
 | **VRAM Delta** | +0.0MB | +1.2MB total | **LEAK!** |
 | **RAM Usage** | 7.2-7.3% | 7.8-7.9% | +0.6% |
 | **Tensors Stored** | 0 | 2,346 | **HUGE!** |
-| **TrainWatch Warns** | No | No (below threshold*) | — |
+| **TrainWatch Warns** | No | No (below threshold*) |  |
 
 #### P100 GPU
 | Metric | CORRECT | INCORRECT | Difference |
@@ -394,7 +394,7 @@ On larger models this leak grows much faster and will trigger a warning.
 | **VRAM Delta** | +0.0MB | +1.2MB total | **LEAK!** |
 | **RAM Usage** | 7.0-7.2% | 7.3-7.5% | +0.3% |
 | **Tensors Stored** | 0 | 2,346 | **HUGE!** |
-| **TrainWatch Warns** | No | No (below threshold*) | — |
+| **TrainWatch Warns** | No | No (below threshold*) |  |
 
 *TrainWatch warns when VRAM grows >10MB from baseline OR >5MB/epoch for 2+ consecutive epochs.
 The +0.4MB/epoch growth in this small model demo is below both thresholds. On larger models
@@ -437,16 +437,16 @@ Epoch 50: OOM crash!
 
 ### 1. The One-Line Bug
 ```python
-# ❌ This ONE line causes the leak:
+# This ONE line causes the leak:
 loss_history.append(loss)
 
-# ✅ Fix it with ONE character:
+# Fix it with ONE character:
 loss_history.append(loss.item())
 ```
 
 **Impact of .item():**
 - Without: +1.2MB leak in 3 epochs
-- With: +0.0MB leak ✅
+- With: +0.0MB leak
 - **One character prevents crash!**
 
 ### 2. Why Tensors Leak Memory
@@ -459,26 +459,26 @@ loss_history.append(loss)          # Stores ENTIRE graph!
 ```
 
 The tensor retains:
-- ✅ The value (4 bytes)
-- ⚠️ Gradient information (~100 bytes)
-- ⚠️ Computation graph (~1KB)
-- ⚠️ References to inputs, weights, activations (~10KB+)
+- The value (4 bytes)
+- Gradient information (~100 bytes)
+- Computation graph (~1KB)
+- References to inputs, weights, activations (~10KB+)
 
-**One tensor → 10KB+ memory!**  
-**2,346 tensors → 23MB+!**
+**One tensor  10KB+ memory!**  
+**2,346 tensors  23MB+!**
 
 ### 3. TrainWatch Detection Works Perfectly
 
 **CORRECT Training:**
 ```
-Epoch 2: VRAM delta: +0.0MB  ← No warning
-Epoch 3: VRAM delta: +0.0MB  ← No warning
+Epoch 2: VRAM delta: +0.0MB   No warning
+Epoch 3: VRAM delta: +0.0MB   No warning
 ```
 
 **INCORRECT Training:**
 ```
-Epoch 2: VRAM delta: +0.4MB  ← growing
-Epoch 3: VRAM delta: +0.8MB  ← growing
+Epoch 2: VRAM delta: +0.4MB   growing
+Epoch 3: VRAM delta: +0.8MB   growing
 ```
 
 **Note:** TrainWatch warns when VRAM grows >10MB from baseline OR >5MB/epoch for 2+ consecutive epochs. The leak in this demo (+0.4MB/epoch on a tiny model) is real but below both thresholds. On larger models the same bug produces GBs of leak and TrainWatch would warn immediately.
@@ -486,9 +486,9 @@ Epoch 3: VRAM delta: +0.8MB  ← growing
 ### 4. GPU-Independent Behavior
 
 Both T4 and P100 showed:
-- ✅ Identical leak pattern (+0.4MB, +0.8MB)
-- ✅ Same number of leaked tensors (2,346)
-- ✅ Same VRAM delta (+1.2MB total)
+- Identical leak pattern (+0.4MB, +0.8MB)
+- Same number of leaked tensors (2,346)
+- Same VRAM delta (+1.2MB total)
 
 **This proves:** The leak is in PyTorch's memory management, not GPU-specific!
 
@@ -497,12 +497,12 @@ Both T4 and P100 showed:
 In production training (100+ epochs):
 ```
 ResNet-50 on ImageNet:
-- Without .item(): ~4GB leak → OOM crash at epoch 50
-- With .item(): 0MB leak → trains for 100+ epochs ✅
+- Without .item(): ~4GB leak  OOM crash at epoch 50
+- With .item(): 0MB leak  trains for 100+ epochs
 
 BERT fine-tuning:
-- Without .item(): ~2GB leak → crashes mid-training
-- With .item(): stable training ✅
+- Without .item(): ~2GB leak  crashes mid-training
+- With .item(): stable training
 ```
 
 **This is a VERY common bug!**
@@ -511,7 +511,7 @@ BERT fine-tuning:
 
 ## What TrainWatch Caught
 
-### CORRECT Implementation ✅
+### CORRECT Implementation
 
 **TrainWatch Output:**
 ```
@@ -524,9 +524,9 @@ Epoch 3 Summary:
    VRAM delta: +0.0MB
 ```
 
-**TrainWatch says:** ✅ All good! No leak detected.
+**TrainWatch says:** All good! No leak detected.
 
-### INCORRECT Implementation ⚠️
+### INCORRECT Implementation
 
 **TrainWatch Output:**
 ```
@@ -540,13 +540,13 @@ Epoch 3 Summary:
 ```
 
 **TrainWatch detected:**
-- ⚠️ VRAM increasing (+0.4MB → +0.8MB)
-- ⚠️ Pattern: Exponential growth
-- ⚠️ Would warn: "Possible memory leak" (if threshold exceeded)
+- VRAM increasing (+0.4MB  +0.8MB)
+- Pattern: Exponential growth
+- Would warn: "Possible memory leak" (if threshold exceeded)
 
 **Demo Conclusion:**
 ```
-⚠️  Training complete - MEMORY LEAK DETECTED!
+WARNING: Training complete - MEMORY LEAK DETECTED!
 Stored 2346 loss tensors in memory!
 ```
 
@@ -556,7 +556,7 @@ Stored 2346 loss tensors in memory!
 
 ### Side-by-Side
 
-#### CORRECT ✅
+#### CORRECT
 ```python
 def train_correct(device):
     watcher = Watcher(warn_on_leak=True)
@@ -570,18 +570,18 @@ def train_correct(device):
             loss.backward()
             optimizer.step()
             
-            # ✅ Extract scalar
+            # Extract scalar
             watcher.step(loss=loss.item())
         
         watcher.epoch_end()
     # Result: 0MB leak!
 ```
 
-#### INCORRECT ❌
+#### INCORRECT
 ```python
 def train_with_leak(device):
     watcher = Watcher(warn_on_leak=True)
-    loss_history = []  # ← BUG SOURCE
+    loss_history = []  #  BUG SOURCE
     
     for epoch in range(3):
         for images, labels in trainloader:
@@ -592,7 +592,7 @@ def train_with_leak(device):
             loss.backward()
             optimizer.step()
             
-            # ❌ Store tensor!
+            # Store tensor!
             loss_history.append(loss)
             
             watcher.step(loss=loss.item())
@@ -605,34 +605,34 @@ def train_with_leak(device):
 
 ## How to Avoid This Bug
 
-### Best Practices ✅
+### Best Practices
 
 1. **Always use `.item()` for scalars**
 ```python
-loss_value = loss.item()  # ✅ Python float
+loss_value = loss.item()  # Python float
 ```
 
 2. **Detach tensors if you must store them**
 ```python
-loss_history.append(loss.detach().cpu())  # ✅ No gradient
+loss_history.append(loss.detach().cpu())  # No gradient
 ```
 
 3. **Use `.detach()` for intermediate tensors**
 ```python
-features = model.encoder(x).detach()  # ✅ Breaks graph
+features = model.encoder(x).detach()  # Breaks graph
 ```
 
 4. **Clear gradients properly**
 ```python
-optimizer.zero_grad()  # ✅ Every iteration!
+optimizer.zero_grad()  # Every iteration!
 ```
 
 5. **Use TrainWatch to catch leaks early**
 ```python
-watcher = Watcher(warn_on_leak=True)  # ✅ Auto-detection
+watcher = Watcher(warn_on_leak=True)  # Auto-detection
 ```
 
-### Warning Signs ⚠️
+### Warning Signs
 
 Watch for these patterns:
 - Lists of tensors: `losses = []`
@@ -700,24 +700,24 @@ python examples/memory_leak_demo.py
 The Memory Leak Detection Demo successfully demonstrates:
 
 **Bug Demonstration:**
-- ✅ Created intentional leak (storing `loss` tensors)
-- ✅ Measured leak growth (+0.4MB → +0.8MB)
-- ✅ Showed real impact (2,346 tensors accumulated)
+- Created intentional leak (storing `loss` tensors)
+- Measured leak growth (+0.4MB  +0.8MB)
+- Showed real impact (2,346 tensors accumulated)
 
 **TrainWatch Effectiveness:**
-- ✅ Detected VRAM growth automatically
-- ✅ Provided clear delta metrics
-- ✅ No false positives on correct code
+- Detected VRAM growth automatically
+- Provided clear delta metrics
+- No false positives on correct code
 
 **Educational Impact:**
-- ✅ Clear side-by-side comparison
-- ✅ Easy to reproduce
-- ✅ Teaches best practices
+- Clear side-by-side comparison
+- Easy to reproduce
+- Teaches best practices
 
 **Cross-Platform Consistency:**
-- ✅ Identical behavior on T4 and P100
-- ✅ Same leak pattern observed
-- ✅ Proves the bug is in code, not hardware
+- Identical behavior on T4 and P100
+- Same leak pattern observed
+- Proves the bug is in code, not hardware
 
 **Key Takeaway:**
 ```
@@ -726,19 +726,19 @@ One character prevents memory leaks!
 TrainWatch will catch this automatically!
 ```
 
-**This demo shows why TrainWatch is essential for production PyTorch training!** 🛡️
+**This demo shows why TrainWatch is essential for production PyTorch training!** 
 
 ---
 
-## 💡 Final Wisdom
+## Final Wisdom
 
 **The #1 Memory Leak in PyTorch:**
 ```python
-# ❌ DON'T DO THIS
+# DON'T DO THIS
 losses.append(loss)
 
-# ✅ DO THIS
+# DO THIS
 losses.append(loss.item())
 ```
 
-**One `.item()` prevents hours of debugging!** 🐛→✅
+**One `.item()` prevents hours of debugging!** 

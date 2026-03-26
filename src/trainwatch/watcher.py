@@ -50,7 +50,9 @@ class Watcher:
         warn_on_leak: bool = True,
         warn_on_bottleneck: bool = True,
         warn_on_variance: bool = True,
-        device: str = 'cuda:0'
+        device: str = 'cuda:0',
+        leak_threshold_mb: float = 10.0,
+        leak_streak_mb: float = 5.0,
     ):
         """
         Initialize training watcher
@@ -64,6 +66,8 @@ class Watcher:
             warn_on_bottleneck: Warn about DataLoader bottlenecks
             warn_on_variance: Warn about loss variance spikes
             device: CUDA device to monitor (e.g., 'cuda:0')
+            leak_threshold_mb: Warn if VRAM delta exceeds this value (default: 10MB)
+            leak_streak_mb: Warn if VRAM grows more than this per epoch for 2+ consecutive epochs (default: 5MB)
         """
         self.window = window
         self.print_every = print_every
@@ -72,6 +76,8 @@ class Watcher:
         self.warn_on_leak = warn_on_leak
         self.warn_on_bottleneck = warn_on_bottleneck
         self.warn_on_variance = warn_on_variance
+        self.leak_threshold_mb = leak_threshold_mb
+        self.leak_streak_mb = leak_streak_mb
 
         # core components
         self.loss_tracker = LossTracker(window=window)
@@ -166,7 +172,7 @@ class Watcher:
             self.system_monitor.set_vram_baseline()
             self.loss_tracker.set_variance_baseline()
             self.baselines_set = True
-            print(f"✓ Epoch {self.epoch_count} complete - baselines set")
+            print(f"Epoch {self.epoch_count} complete - baselines set")
             return
 
         # epoch summary
@@ -196,8 +202,8 @@ class Watcher:
     def _check_memory_leak(self, vram_delta: Optional[float]) -> None:
         """
         Detect memory leaks using two complementary signals:
-        1. Absolute threshold: delta from baseline > 10MB
-        2. Consecutive growth: VRAM grew >5MB for 2+ consecutive epochs
+        1. Absolute threshold: delta from baseline > leak_threshold_mb (default: 10MB)
+        2. Consecutive growth: VRAM grew >leak_streak_mb for 2+ consecutive epochs (default: 5MB)
 
         Research basis: PyTorch community practice recommends checking
         memory_allocated() growth across epochs. Normal allocator
@@ -209,16 +215,16 @@ class Watcher:
         # track per-epoch growth using cumulative delta
         if self._vram_delta_prev is not None:
             epoch_growth = vram_delta - self._vram_delta_prev
-            if epoch_growth > 5:
+            if epoch_growth > self.leak_streak_mb:
                 self._vram_growth_streak += 1
             else:
                 self._vram_growth_streak = 0
         self._vram_delta_prev = vram_delta
 
-        if vram_delta > 10:
-            print(f"⚠️  WARNING: Possible memory leak (+{vram_delta:.1f}MB VRAM since baseline)")
+        if vram_delta > self.leak_threshold_mb:
+            print(f"WARNING: Possible memory leak (+{vram_delta:.1f}MB VRAM since baseline)")
         elif self._vram_growth_streak >= 2:
-            print(f"⚠️  WARNING: Possible memory leak (VRAM growing {self._vram_growth_streak} consecutive epochs, +{vram_delta:.1f}MB total)")
+            print(f"WARNING: Possible memory leak (VRAM growing {self._vram_growth_streak} consecutive epochs, +{vram_delta:.1f}MB total)")
 
     def _sync_losses(self) -> None:
         """
@@ -247,7 +253,7 @@ class Watcher:
         # variance spike
         if self.warn_on_variance:
             if self.loss_tracker.detect_variance_spike():
-                print("⚠️  WARNING: Loss variance spike detected - training may be unstable")
+                print("WARNING: Loss variance spike detected - training may be unstable")
 
         # DataLoader bottleneck
         if self.warn_on_bottleneck and self.show_gpu:
@@ -255,4 +261,4 @@ class Watcher:
             if 'vram_mb' in metrics and metrics['vram_mb'] > 100:  # GPU is being used
                 if step_time > 0.5:  # but step is slow
                     if metrics['cpu_percent'] < 50:  # and CPU is idle
-                        print("⚠️  WARNING: Possible DataLoader bottleneck (slow steps, idle CPU)")
+                        print("WARNING: Possible DataLoader bottleneck (slow steps, idle CPU)")

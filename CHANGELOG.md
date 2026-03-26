@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2026-03-15
 
-### 🚀 Added
+### Added
 
 - **Tensor Support**: `step()` now accepts `torch.Tensor` directly (no `.item()` required)
 - **Batch Synchronization**: New `sync_interval` parameter for performance optimization
@@ -18,25 +18,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance Optimization**: Minimal overhead (<1%) even with small batch sizes
 - **Automatic Buffer Flush**: Remaining tensors are synced at `epoch_end()`
 
-### 🔄 Changed
+### Changed
 
 - **print_every default**: Changed from `10` to `100` for better performance
   - Less frequent I/O operations
   - More reasonable update frequency for most use cases
 - **step() method**: Now accepts both `torch.Tensor` and `float` (backward compatible)
 
-### 🐛 Fixed
+### Fixed
 
 - Performance overhead in small batch training scenarios
 - GPU-CPU synchronization bottleneck
 
-### 📚 Documentation
+### Documentation
 
 - Added performance best practices guide
 - Updated examples to show tensor usage
 - Added migration guide for v0.1.0 users
 
-### ✅ Backward Compatibility
+### Backward Compatibility
 
 **100% backward compatible with v0.1.0**
 
@@ -53,14 +53,14 @@ watcher = Watcher(sync_interval=10)
 watcher.step(loss=loss)  # ~5x faster on GPU!
 ```
 
-### 📊 Performance Improvements
+### Performance Improvements
 
 | Scenario | v0.1.0 | v0.2.0 | Improvement |
 |----------|--------|--------|-------------|
 | GPU (1K steps) | ~265ms | ~50ms | ~5x faster |
 | CPU training | baseline | similar | no benefit |
 
-### 🙏 Acknowledgments
+### Acknowledgments
 
 Special thanks to community feedback that identified the `.item()` synchronization overhead issue.
 
@@ -68,7 +68,7 @@ Special thanks to community feedback that identified the `.item()` synchronizati
 
 ## [0.1.0] - 2026-01-31
 
-### 🎉 Initial Release
+### Initial Release
 
 - **One line of code** monitoring for PyTorch training
 - **Loss tracking**: Moving average, variance, trends

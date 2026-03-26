@@ -1,10 +1,10 @@
-# TrainWatch 🔍
+# TrainWatch
 
 **Your PyTorch training is hiding problems. Here's what you're missing:**
 
-- 🐌 GPU sitting idle while DataLoader struggles
-- 💾 Memory leaking 100MB per epoch
-- 📈 Loss about to explode (but you'll only know in 2 hours)
+- GPU sitting idle while DataLoader struggles
+- Memory leaking 100MB per epoch
+- Loss about to explode (but you'll only know in 2 hours)
 
 **TrainWatch shows you in real-time. One line of code.**
 
@@ -59,7 +59,7 @@ for epoch in range(epochs):
 Step     10 | loss=2.3045 | time=0.234s | CPU=45.2% | RAM=23.1% | VRAM=1024MB
 Step     20 | loss=2.1234 | time=0.231s | CPU=46.1% | RAM=23.4% | VRAM=1025MB
 Step     30 | loss=1.9876 | time=0.229s | CPU=44.8% | RAM=23.6% | VRAM=1026MB
-⚠️  WARNING: Loss variance spike detected - training may be unstable
+WARNING: Loss variance spike detected - training may be unstable
 Step     40 | loss=2.5432 | time=0.235s | CPU=45.5% | RAM=23.8% | VRAM=1027MB
 
 ============================================================
@@ -77,7 +77,7 @@ Epoch 1 Summary:
 watcher = Watcher(
     window=20,               # Moving average window (default: 20)
     print_every=100,         # Print every N steps (default: 100, was 10 in v0.1.0)
-    sync_interval=10,        # Sync tensor losses every N steps (default: 10) 🆕
+    sync_interval=10,        # Sync tensor losses every N steps (default: 10)
     show_gpu=True,           # Show GPU metrics (default: True)
     warn_on_leak=True,       # Warn on memory leaks (default: True)
     warn_on_bottleneck=True, # Warn on DataLoader issues (default: True)
@@ -86,7 +86,7 @@ watcher = Watcher(
 )
 ```
 
-### 🆕 Performance Parameters (v0.2.0)
+### Performance Parameters (v0.2.0)
 
 **`sync_interval`** - How often to sync tensor losses (default: 10)
 - Smaller = more frequent updates, slightly slower
@@ -112,18 +112,18 @@ watcher = Watcher(
 
 ---
 
-## ⚡ Performance Best Practices
+## Performance Best Practices
 
 ### Minimize GPU-CPU Sync (v0.2.0)
 
 TrainWatch v0.2.0 supports tensor inputs to reduce synchronization overhead by ~5x on GPU.
 
-**❌ Slower (v0.1.0 style):**
+**Slower (v0.1.0 style):**
 ```python
 watcher.step(loss=loss.item())  # Sync every step
 ```
 
-**✅ Faster (v0.2.0 recommended):**
+**Faster (v0.2.0 recommended):**
 ```python
 watcher = Watcher(sync_interval=10)
 watcher.step(loss=loss)  # Tensor! Batch sync every 10 steps
@@ -164,17 +164,17 @@ watcher = Watcher(sync_interval=100)  # Minimal overhead
 
 TrainWatch gives you 3 critical warnings:
 
-### 🔴 Loss Variance Spike
+### Loss Variance Spike
 Your loss is jumping around wildly. Training might diverge.
 
 **Likely cause:** Learning rate too high, bad batch, or data issue
 
-### 🔴 Memory Leak
+### Memory Leak
 VRAM growing >10MB since baseline, or consistently increasing >5MB for 2+ consecutive epochs.
 
 **Likely cause:** Tensors not released, gradients accumulating, or Python refs
 
-### 🔴 DataLoader Bottleneck
+### DataLoader Bottleneck
 GPU idle while waiting for data.
 
 **Likely cause:** `num_workers=0`, slow data augmentation, or I/O issues
@@ -183,13 +183,13 @@ GPU idle while waiting for data.
 
 ## When to Use TrainWatch
 
-✅ **Use it when:**
+**Use it when:**
 - Training a new model for the first time
 - Debugging slow or unstable training
 - Running long experiments overnight
 - Want peace of mind your training is healthy
 
-❌ **Don't need it when:**
+**Don't need it when:**
 - Training is working perfectly (lucky you!)
 - You're using WandB/TensorBoard for detailed logging
 - You want fancy visualizations (we're CLI-only for now)
@@ -209,7 +209,7 @@ GPU idle while waiting for data.
 
 See the [`examples/`](examples/) directory for complete working examples:
 
-### 🎯 Simple CNN - CIFAR-10
+### Simple CNN - CIFAR-10
 Perfect for getting started. Shows basic TrainWatch integration with a simple 2-layer CNN.
 
 ```bash
@@ -218,9 +218,9 @@ python examples/cifar10_simple.py
 
 **Tested on:** Kaggle CPU, GPU T4, GPU P100  
 **Training time:** ~2 min (GPU)  
-**Results:** [examples/cifar10_results](examples/cifar10_results)
+**Results:** [examples/cifar10_results](examples/cifar10_results.md)
 
-### 🏗️ DenseNet121 - CIFAR-10
+### DenseNet121 - CIFAR-10
 Real PyTorch model from torchvision.models, training from scratch.
 
 ```bash
@@ -228,11 +228,11 @@ python examples/densenet_cifar10.py
 ```
 
 **Model:** DenseNet121 (weights=None, ~7M params)
-**Image size:** 224×224 (CIFAR resized)
+**Image size:** 224x224 (CIFAR resized)
 **VRAM:** ~850MB
 **Shows:** torchvision.models integration, gradient clipping, LR scheduling
 
-### 🐛 Memory Leak Detection - CIFAR-10 ⚠️
+### Memory Leak Detection - CIFAR-10
 Interactive demo showing memory leak detection in action.
 
 ```bash
@@ -242,11 +242,11 @@ python examples/memory_leak_demo.py
 **Shows:** Intentional leak vs correct implementation  
 **TrainWatch warns:** Memory leak detected automatically!
 
-👉 **Full examples documentation:** [examples/README.md](examples/README.md)
+**Full examples documentation:** [examples/README.md](examples/README.md)
 
 ---
 
-## 📊 Test Results & Benchmarks
+## Test Results & Benchmarks
 
 All examples tested on Kaggle with real GPUs. Full results in [`examples/*_results.md`](examples/).
 
@@ -256,21 +256,21 @@ All examples tested on Kaggle with real GPUs. Full results in [`examples/*_resul
 |---------|-----|-----------|----------|------|-------|
 | **Simple CNN** | T4 | ~5ms | 75% | 25MB | 12x faster than CPU |
 | | P100 | ~4ms | 75% | 25MB | 15x faster than CPU |
-| **DenseNet121** | T4 | 331ms | 81.76% | 115MB | 224×224 images |
+| **DenseNet121** | T4 | 331ms | 81.76% | 115MB | 224x224 images |
 | | P100 | 175ms | 82.15% | 115MB | **1.9x faster than T4** |
-| **Memory Leak** | Both | - | - | grows | **Leak detected!** ⚠️ |
+| **Memory Leak** | Both | - | - | grows | **Leak detected!** |
 
 ### Key Findings
 
-✅ **TrainWatch Overhead (v0.2.0):** <0.5% per step (~5x improvement on GPU from v0.1.0)
-✅ **Memory Leak Detection:** VRAM tracked per epoch (warns at >10MB or consistent growth)
-✅ **VRAM Tracking:** Accurate across all models (25MB - 4GB range)  
-✅ **Cross-GPU Consistency:** Identical behavior on T4 and P100  
-✅ **No False Positives:** 0 false alarms on healthy training runs
+**TrainWatch Overhead (v0.2.0):** <0.5% per step (~5x improvement on GPU from v0.1.0)
+**Memory Leak Detection:** VRAM tracked per epoch (warns at >10MB or consistent growth)
+**VRAM Tracking:** Accurate across all models (25MB - 4GB range)  
+**Cross-GPU Consistency:** Identical behavior on T4 and P100  
+**No False Positives:** 0 false alarms on healthy training runs
 
 ### Kaggle Test Collection
 
-🔗 **Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch)
+**Try it yourself:** [TrainWatch Examples on Kaggle](https://www.kaggle.com/emirkanbeyaz/code?query=trainwatch)
 
 All examples ready to run with one click! Includes:
 - Simple CNN (CPU, T4, P100 tested)
@@ -315,11 +315,11 @@ Open an issue or PR on [GitHub](https://github.com/Hords01/trainwatch)
 
 **Emirkan Beyaz**
 
-- 📧 Email: [emirkanbeyaz01@gmail.com](mailto:emirkanbeyaz01@gmail.com)
-- 💼 LinkedIn: [linkedin.com/in/emirkan-beyaz-07732933b](https://www.linkedin.com/in/emirkan-beyaz-07732933b)
-- 🔗 GitHub: [@Hords01](https://github.com/Hords01)
+- Email: [emirkanbeyaz01@gmail.com](mailto:emirkanbeyaz01@gmail.com)
+- LinkedIn: [linkedin.com/in/emirkan-beyaz-07732933b](https://www.linkedin.com/in/emirkan-beyaz-07732933b)
+- GitHub: [@Hords01](https://github.com/Hords01)
 
-Built with ❤️ for the PyTorch community
+Built for the PyTorch community
 
 ---
 

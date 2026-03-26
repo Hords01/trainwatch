@@ -15,7 +15,7 @@ def test_watcher_initialization():
     assert watcher is not None
     assert watcher.step_count == 0
     assert watcher.epoch_count == 0
-    print("✓ Watcher initialization test passed")
+    print("Watcher initialization test passed")
 
 def test_watcher_step():
     """Test that step() works without errors"""
@@ -26,7 +26,7 @@ def test_watcher_step():
         watcher.step(loss=2.0 - i * 0.1)
 
     assert watcher.step_count == 10
-    print("✓ Watcher step test passed")
+    print("Watcher step test passed")
 
 def test_watcher_epoch():
     """Test epoch_end() functionality"""
@@ -38,7 +38,7 @@ def test_watcher_epoch():
 
     watcher.epoch_end()
     assert watcher.epoch_count == 1
-    print("✓ Watcher epoch test passed")
+    print("Watcher epoch test passed")
 
 def test_loss_tracker():
     """Test loss tracking and moving average"""
@@ -54,7 +54,7 @@ def test_loss_tracker():
     assert avg is not None
     assert 0.5 < avg < 1.5 # should be around 1.0
 
-    print("✓ Loss tracker test passed")
+    print("Loss tracker test passed")
 
 def test_system_monitor():
     """Test system monitoring"""
@@ -72,7 +72,7 @@ def test_system_monitor():
         assert 'vram_mb' in metrics
         assert metrics['vram_mb'] >= 0
 
-    print("✓ System monitor test passed")
+    print("System monitor test passed")
 
 def test_full_training_simulation():
     """Test full training simulation"""
@@ -89,7 +89,7 @@ def test_full_training_simulation():
 
     assert watcher.step_count == 100
     assert watcher.epoch_count == 2
-    print("✓ Full training simulation test passed")
+    print("Full training simulation test passed")
 
 
 if __name__ == "__main__":
@@ -103,5 +103,5 @@ if __name__ == "__main__":
     test_full_training_simulation()
 
     print("\n" + "=" * 60)
-    print("All tests passed! ✓")
+    print("All tests passed!")
     print("=" * 60)
